@@ -1,0 +1,35 @@
+<% if (typeof success_msg !== 'undefined' && success_msg.length > 0) { %>
+  <% success_msg.forEach(function(msg) { %>
+    <div class="alert alert-success">
+      <span class="alert-icon">✓</span>
+      <%= msg %>
+    </div>
+  <% }); %>
+<% } %>
+
+<% if (typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+  <% error_msg.forEach(function(msg) { %>
+    <div class="alert alert-error">
+      <span class="alert-icon">✕</span>
+      <%= msg %>
+    </div>
+  <% }); %>
+<% } %>
+
+<% if (typeof error !== 'undefined' && error.length > 0) { %>
+  <% error.forEach(function(msg) { %>
+    <div class="alert alert-error">
+      <span class="alert-icon">✕</span>
+      <%= msg %>
+    </div>
+  <% }); %>
+<% } %>
+
+<% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+  <% errors.forEach(function(error) { %>
+    <div class="alert alert-error">
+      <span class="alert-icon">✕</span>
+      <%= error.msg %>
+    </div>
+  <% }); %>
+<% } %>
