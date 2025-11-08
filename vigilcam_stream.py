@@ -1,19 +1,59 @@
-import cv2
-import mediapipe as mp
-import numpy as np
-import sounddevice as sd
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import sys
+import json
+import traceback
+
+def output_json(data):
+    """Send JSON data to Node.js via stdout"""
+    try:
+        print(json.dumps(data), flush=True)
+    except Exception as e:
+        print(json.dumps({'type': 'error', 'message': f'JSON output error: {str(e)}'}), flush=True)
+
+# Send startup message
+output_json({'type': 'status', 'message': 'Python script starting...'})
+
+try:
+    import cv2
+    output_json({'type': 'status', 'message': f'OpenCV loaded: {cv2.__version__}'})
+except Exception as e:
+    output_json({'type': 'error', 'message': f'OpenCV import failed: {str(e)}'})
+    sys.exit(1)
+
+try:
+    import mediapipe as mp
+    output_json({'type': 'status', 'message': 'MediaPipe loaded'})
+except Exception as e:
+    output_json({'type': 'error', 'message': f'MediaPipe import failed: {str(e)}'})
+    sys.exit(1)
+
+try:
+    import numpy as np
+    output_json({'type': 'status', 'message': 'NumPy loaded'})
+except Exception as e:
+    output_json({'type': 'error', 'message': f'NumPy import failed: {str(e)}'})
+    sys.exit(1)
+
+try:
+    import sounddevice as sd
+    output_json({'type': 'status', 'message': 'SoundDevice loaded'})
+except Exception as e:
+    output_json({'type': 'error', 'message': f'SoundDevice import failed: {str(e)}'})
+    sys.exit(1)
+
 import time
 import threading
 from collections import deque
-import json
 from datetime import datetime
-import sys
 import base64
 import os
 
 # Get user ID and socket ID from command line arguments
 user_id = sys.argv[1] if len(sys.argv) > 1 else "unknown"
 socket_id = sys.argv[2] if len(sys.argv) > 2 else "unknown"
+
+output_json({'type': 'status', 'message': f'User ID: {user_id}, Socket: {socket_id}'})
 
 # Configuration constants
 CALIB_SECONDS = 3.0
@@ -36,12 +76,18 @@ HEAD_TURN_THRESHOLD = 0.22
 EXCESSIVE_BLINK_THRESHOLD = 40
 
 # Initialize MediaPipe
-mp_face_mesh = mp.solutions.face_mesh
-mp_face_detection = mp.solutions.face_detection
-mp_drawing = mp.solutions.drawing_utils
+try:
+    mp_face_mesh = mp.solutions.face_mesh
+    mp_face_detection = mp.solutions.face_detection
+    mp_drawing = mp.solutions.drawing_utils
 
-face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True, max_num_faces=3)
-face_detection = mp_face_detection.FaceDetection(min_detection_confidence=0.4)
+    face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True, max_num_faces=3)
+    face_detection = mp_face_detection.FaceDetection(min_detection_confidence=0.4)
+    
+    output_json({'type': 'status', 'message': 'MediaPipe initialized'})
+except Exception as e:
+    output_json({'type': 'error', 'message': f'MediaPipe initialization failed: {str(e)}'})
+    sys.exit(1)
 
 # Landmark indices
 LEFT_EYE = [33, 160, 158, 133, 153, 144]
@@ -77,10 +123,6 @@ exam_data = {
 violation_timers = {}
 blink_history = deque(maxlen=60)
 
-def output_json(data):
-    """Send JSON data to Node.js via stdout"""
-    print(json.dumps(data), flush=True)
-
 def add_violation(violation_type, severity="MEDIUM"):
     current_time = time.time()
     
@@ -115,10 +157,13 @@ def add_violation(violation_type, severity="MEDIUM"):
 
 def audio_callback(indata, frames, time_info, status):
     global _audio_rms
-    mono = np.mean(indata, axis=1) if indata.ndim > 1 else indata[:,0]
-    rms = float(np.sqrt(np.mean(np.square(mono))))
-    with _audio_lock:
-        _audio_rms = rms
+    try:
+        mono = np.mean(indata, axis=1) if indata.ndim > 1 else indata[:,0]
+        rms = float(np.sqrt(np.mean(np.square(mono))))
+        with _audio_lock:
+            _audio_rms = rms
+    except Exception as e:
+        pass  # Silently ignore audio errors
 
 def start_audio():
     global _audio_stream
@@ -129,7 +174,8 @@ def start_audio():
                                        channels=1)
         _audio_stream.start()
         return True
-    except Exception:
+    except Exception as e:
+        output_json({'type': 'warning', 'message': f'Audio init failed: {str(e)}'})
         return False
 
 def calibrate_audio_baseline():
@@ -218,16 +264,21 @@ def save_exam_report():
 
 # Main execution
 try:
+    output_json({'type': 'status', 'message': 'Initializing camera...'})
+    
     # Initialize audio
     audio_ok = start_audio()
     if audio_ok:
         calibrate_audio_baseline()
+        output_json({'type': 'status', 'message': 'Audio initialized'})
 
     # Open camera
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         output_json({'type': 'error', 'message': 'Cannot open camera'})
         sys.exit(1)
+
+    output_json({'type': 'status', 'message': 'Camera opened successfully'})
 
     # Calibration phase
     output_json({'type': 'status', 'message': 'Calibrating - look straight at camera'})
@@ -272,7 +323,7 @@ try:
     baseline_x = float(np.mean(calib_x))
     baseline_y = float(np.mean(calib_y))
     
-    output_json({'type': 'status', 'message': 'Monitoring started'})
+    output_json({'type': 'status', 'message': 'Calibration complete - monitoring started'})
 
     # Main monitoring loop
     blink_frames = 0
@@ -287,6 +338,7 @@ try:
     occlusion_frames = 0
     noise_frames = 0
 
+    frame_count = 0
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -438,16 +490,22 @@ try:
             'status': 'monitoring'
         })
         
+        frame_count += 1
+        
         # Small delay to control frame rate
         time.sleep(0.033)  # ~30 FPS
 
 except KeyboardInterrupt:
-    pass
+    output_json({'type': 'status', 'message': 'Monitoring stopped by user'})
 except Exception as e:
-    output_json({'type': 'error', 'message': str(e)})
+    output_json({'type': 'error', 'message': f'Fatal error: {str(e)}'})
+    output_json({'type': 'error', 'message': f'Traceback: {traceback.format_exc()}'})
 finally:
     # Save report
-    save_exam_report()
+    try:
+        save_exam_report()
+    except Exception as e:
+        output_json({'type': 'error', 'message': f'Report save failed: {str(e)}'})
     
     # Cleanup
     try:
