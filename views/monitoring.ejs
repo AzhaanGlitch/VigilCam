@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/navbar') %>
+  
+  <main class="main-content">
+    <%- include('partials/messages') %>
+    
+    <section class="monitoring-section">
+      <div class="monitoring-header">
+        <h1 class="monitoring-title">
+          <span class="status-indicator"></span>
+          LIVE MONITORING ACTIVE
+        </h1>
+        <p class="monitoring-user">Operator: <span class="accent"><%= user.name %></span></p>
+      </div>
+
+      <div class="camera-container">
+        <div class="camera-feed">
+          <div class="camera-overlay">
+            <div class="scan-line"></div>
+          </div>
+          <div class="camera-placeholder">
+            <div class="camera-icon">◉</div>
+            <h2 class="camera-text">CAMERA FEED ACTIVE</h2>
+            <p class="camera-subtext">Python ML Integration Here</p>
+            <div class="camera-stats">
+              <div class="stat-item">
+                <span class="stat-label">FPS:</span>
+                <span class="stat-value accent">30</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">RESOLUTION:</span>
+                <span class="stat-value accent">1920x1080</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">STATUS:</span>
+                <span class="stat-value accent">RECORDING</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-panel">
+        <div class="control-group">
+          <h3 class="control-title">DETECTION SETTINGS</h3>
+          <div class="control-items">
+            <div class="control-item">
+              <label class="control-label">
+                <input type="checkbox" checked>
+                <span>Face Detection</span>
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="control-label">
+                <input type="checkbox" checked>
+                <span>Gaze Tracking</span>
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="control-label">
+                <input type="checkbox" checked>
+                <span>Audio Monitoring</span>
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="control-label">
+                <input type="checkbox" checked>
+                <span>Multiple Face Alert</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3 class="control-title">SYSTEM STATUS</h3>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-dot active"></span>
+              <span>Camera Online</span>
+            </div>
+            <div class="status-item">
+              <span class="status-dot active"></span>
+              <span>AI Engine Running</span>
+            </div>
+            <div class="status-item">
+              <span class="status-dot active"></span>
+              <span>Database Connected</span>
+            </div>
+            <div class="status-item">
+              <span class="status-dot active"></span>
+              <span>Cloud Sync Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-panel">
+        <div class="info-box">
+          <h3 class="info-title">INTEGRATION INSTRUCTIONS</h3>
+          <div class="info-content">
+            <p>To integrate the Python ML detection system:</p>
+            <ol class="info-list">
+              <li>Run the Python script: <code>python VigilCam.py</code></li>
+              <li>The script will open the camera feed in a separate window</li>
+              <li>Real-time violations and alerts will be displayed</li>
+              <li>Reports are saved automatically as JSON files</li>
+              <li>Press 'Q' to end the monitoring session</li>
+            </ol>
+            <p class="info-note">
+              <strong>Note:</strong> The Python detection system runs independently. 
+              Future versions will integrate the feed directly into this web interface.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <%- include('partials/footer') %>
+  
+  <script src="/js/main.js"></script>
+</body>
+</html>
