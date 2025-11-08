@@ -449,6 +449,6 @@ If you encounter any issues or have questions:
 
 **⭐ Star this repo if you find it helpful! ⭐**
 
-Made with ❤️ by Azhaan Ali Siddiqui
+Made by Azhaan Ali Siddiqui
 
 </div>
