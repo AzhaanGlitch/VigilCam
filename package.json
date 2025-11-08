@@ -1,7 +1,7 @@
 {
   "name": "vigilcam",
-  "version": "1.0.0",
-  "description": "Professional exam proctoring and surveillance monitoring system",
+  "version": "2.0.0",
+  "description": "Professional exam proctoring and surveillance monitoring system with integrated ML detection",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,7 +11,9 @@
     "proctoring",
     "surveillance",
     "monitoring",
-    "security"
+    "security",
+    "ml",
+    "computer-vision"
   ],
   "author": "Azhaan Ali Siddiqui",
   "license": "ISC",
@@ -24,7 +26,10 @@
     "passport-local": "^1.0.0",
     "bcryptjs": "^2.4.3",
     "connect-flash": "^0.1.1",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "socket.io": "^4.6.1",
+    "python-shell": "^5.0.0",
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
