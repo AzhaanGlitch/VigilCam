@@ -79,6 +79,33 @@ const fs = require('fs');
 
 let activeSessions = new Map(); // Store active monitoring sessions
 
+// Function to find Python executable
+function getPythonCommand() {
+  const { execSync } = require('child_process');
+  
+  // Try different Python commands
+  const commands = ['python', 'python3', 'py'];
+  
+  for (const cmd of commands) {
+    try {
+      const result = execSync(`${cmd} --version`, { encoding: 'utf8', stdio: 'pipe' });
+      if (result.includes('Python 3')) {
+        console.log(`Found Python: ${cmd} - ${result.trim()}`);
+        return cmd;
+      }
+    } catch (err) {
+      // Command not found, try next
+      continue;
+    }
+  }
+  
+  // If none found, return 'python3' as default
+  console.warn('Warning: Could not detect Python installation. Using default "python3"');
+  return 'python3';
+}
+
+const pythonCommand = getPythonCommand();
+
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
@@ -87,34 +114,46 @@ io.on('connection', (socket) => {
     
     const options = {
       mode: 'json',
-      pythonPath: 'python',
+      pythonPath: pythonCommand, // Use detected Python command
       pythonOptions: ['-u'],
       scriptPath: __dirname,
       args: [data.userId, socket.id]
     };
 
-    const pyshell = new PythonShell('vigilcam_stream.py', options);
+    let pyshell;
+    
+    try {
+      pyshell = new PythonShell('vigilcam_stream.py', options);
+      
+      // Store the session
+      activeSessions.set(socket.id, {
+        pyshell: pyshell,
+        userId: data.userId,
+        startTime: Date.now()
+      });
 
-    // Store the session
-    activeSessions.set(socket.id, {
-      pyshell: pyshell,
-      userId: data.userId,
-      startTime: Date.now()
-    });
+      pyshell.on('message', (message) => {
+        // Emit ML detection data to client
+        socket.emit('detection-data', message);
+      });
 
-    pyshell.on('message', (message) => {
-      // Emit ML detection data to client
-      socket.emit('detection-data', message);
-    });
+      pyshell.on('error', (err) => {
+        console.error('Python Error:', err);
+        socket.emit('error', { 
+          message: 'Detection system error. Please ensure Python is installed and all dependencies are available.' 
+        });
+      });
 
-    pyshell.on('error', (err) => {
-      console.error('Python Error:', err);
-      socket.emit('error', { message: 'Detection system error' });
-    });
-
-    pyshell.on('close', () => {
-      console.log('Python script closed for:', socket.id);
-    });
+      pyshell.on('close', () => {
+        console.log('Python script closed for:', socket.id);
+      });
+      
+    } catch (err) {
+      console.error('Failed to start Python script:', err);
+      socket.emit('error', { 
+        message: 'Failed to start monitoring. Please check Python installation and dependencies.' 
+      });
+    }
   });
 
   socket.on('stop-monitoring', () => {
@@ -122,11 +161,13 @@ io.on('connection', (socket) => {
     const session = activeSessions.get(socket.id);
     
     if (session && session.pyshell) {
-      session.pyshell.childProcess.kill();
+      try {
+        session.pyshell.childProcess.kill();
+      } catch (err) {
+        console.error('Error killing Python process:', err);
+      }
       activeSessions.delete(socket.id);
       
-      // Send the report file if it exists
-      const reportPath = path.join(__dirname, 'reports', `exam_report_${session.userId}_*.json`);
       socket.emit('monitoring-stopped', { message: 'Session ended' });
     }
   });
@@ -136,7 +177,11 @@ io.on('connection', (socket) => {
     const session = activeSessions.get(socket.id);
     
     if (session && session.pyshell) {
-      session.pyshell.childProcess.kill();
+      try {
+        session.pyshell.childProcess.kill();
+      } catch (err) {
+        console.error('Error killing Python process:', err);
+      }
       activeSessions.delete(socket.id);
     }
   });
@@ -150,5 +195,6 @@ server.listen(PORT, () => {
   console.log(`    VigilCam Server Running on Port ${PORT}`);
   console.log(`    Access at: http://localhost:${PORT}`);
   console.log(`    WebSocket Server: Active`);
+  console.log(`    Python Command: ${pythonCommand}`);
   console.log(`═══════════════════════════════════════════════`);
 });
