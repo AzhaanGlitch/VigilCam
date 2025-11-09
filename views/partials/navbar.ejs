@@ -1,59 +1,32 @@
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=account_circle" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=frame_person" />
+
 <nav class="navbar">
   <div class="nav-container">
     <div class="nav-brand">
       <a href="/">
-        <span class="material-icons brand-icon">videocam</span>
+        <span class="material-symbols-outlined"> frame_person</span>
         <span class="brand-text">VigilCam</span>
       </a>
     </div>
     
     <ul class="nav-menu">
       <% if (typeof user !== 'undefined' && user) { %>
-        <li><a href="/" class="nav-link">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">home</span>
-          Dashboard
-        </a></li>
-        <li><a href="/monitoring" class="nav-link">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">monitor</span>
-          Monitoring
-        </a></li>
-        <li><a href="/about" class="nav-link">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">info</span>
-          About Us
-        </a></li>
-        <li><a href="/contact" class="nav-link">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">email</span>
-          Contact
-        </a></li>
+        <li><a href="/" class="nav-link">Dashboard</a></li>
+        <li><a href="/monitoring" class="nav-link">Monitoring</a></li>
+        <li><a href="/about" class="nav-link">About Us</a></li>
+        <li><a href="/contact" class="nav-link">Contact</a></li>
         <li><span class="nav-user">
-          <span class="material-icons" style="font-size: 1rem;">account_circle</span>
+          <span class="material-symbols-outlined"> account_circle</span>
           <%= user.name %>
         </span></li>
-        <li><a href="/users/logout" class="nav-link nav-logout">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">logout</span>
-          Sign out
-        </a></li>
+        <li><a href="/users/logout" class="nav-link nav-logout">Sign out</a></li>
       <% } else { %>
-        <li><a href="/" class="nav-link">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">home</span>
-          Dashboard
-        </a></li>
-        <li><a href="/about" class="nav-link">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">info</span>
-          About Us
-        </a></li>
-        <li><a href="/contact" class="nav-link">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">email</span>
-          Contact
-        </a></li>
-        <li><a href="/login" class="nav-link nav-signin">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">login</span>
-          Sign in
-        </a></li>
-        <li><a href="/register" class="nav-link nav-register">
-          <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">person_add</span>
-          Register
-        </a></li>
+        <li><a href="/" class="nav-link">Dashboard</a></li>
+        <li><a href="/about" class="nav-link">About Us</a></li>
+        <li><a href="/contact" class="nav-link">Contact</a></li>
+        <li><a href="/login" class="nav-link nav-signin">Sign in</a></li>
+        <li><a href="/register" class="nav-link nav-register">Register</a></li>
       <% } %>
     </ul>
   </div>
