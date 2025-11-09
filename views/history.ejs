@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    .history-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 3rem;
+    }
+
+    .history-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .history-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .history-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .reports-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .report-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.8rem;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .report-card:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-5px);
+    }
+
+    .report-date {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .report-info {
+      margin-bottom: 1.5rem;
+    }
+
+    .report-stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .report-stat-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .report-stat-value {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    .risk-badge {
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .risk-low {
+      background: rgba(0, 255, 0, 0.1);
+      color: #00ff00;
+      border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+
+    .risk-moderate {
+      background: rgba(255, 170, 0, 0.1);
+      color: #ffaa00;
+      border: 1px solid rgba(255, 170, 0, 0.3);
+    }
+
+    .risk-high {
+      background: rgba(255, 68, 68, 0.1);
+      color: #ff4444;
+      border: 1px solid rgba(255, 68, 68, 0.3);
+    }
+
+    .report-actions {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1.5rem;
+    }
+
+    .btn-small {
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-preview {
+      background: rgba(0, 255, 255, 0.1);
+      color: #00ffff;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+    }
+
+    .btn-preview:hover {
+      background: rgba(0, 255, 255, 0.2);
+    }
+
+    .btn-download {
+      background: rgba(0, 255, 0, 0.1);
+      color: #00ff00;
+      border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+
+    .btn-download:hover {
+      background: rgba(0, 255, 0, 0.2);
+    }
+
+    .btn-delete {
+      background: rgba(255, 68, 68, 0.1);
+      color: #ff4444;
+      border: 1px solid rgba(255, 68, 68, 0.3);
+      padding: 0.6rem;
+    }
+
+    .btn-delete:hover {
+      background: rgba(255, 68, 68, 0.2);
+    }
+
+    .no-reports {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+
+    .no-reports-icon {
+      font-size: 5rem;
+      color: rgba(255, 255, 255, 0.2);
+      margin-bottom: 1rem;
+    }
+
+    .no-reports-text {
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .no-reports-subtext {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    /* Preview Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      background: var(--bg-dark);
+      margin: 3% auto;
+      padding: 0;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 1000px;
+      position: relative;
+    }
+
+    .modal-header {
+      padding: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .modal-close {
+      color: var(--text-secondary);
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0.5rem;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: var(--primary-color);
+    }
+
+    .modal-body {
+      padding: 2rem;
+    }
+
+    .violations-section {
+      margin-top: 2rem;
+    }
+
+    .violations-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .history-container {
+        padding: 1rem;
+      }
+
+      .reports-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-content {
+        width: 95%;
+        margin: 5% auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background-image"></div>
+  
+  <%- include('partials/navbar') %>
+  
+  <main class="main-content">
+    <div class="history-container">
+      <%- include('partials/messages') %>
+      
+      <div class="history-header">
+        <h1 class="history-title">
+          <span class="material-icons" style="font-size: 3rem;">history</span>
+          Report History
+        </h1>
+        <p class="history-subtitle">View and download your monitoring session reports</p>
+      </div>
+
+      <% if (reports && reports.length > 0) { %>
+        <div class="reports-grid">
+          <% reports.forEach(report => { %>
+            <div class="report-card">
+              <div class="report-date">
+                <span class="material-icons" style="font-size: 1rem;">event</span>
+                <%= report.date %>
+              </div>
+              
+              <div class="report-info">
+                <div class="report-stat-row">
+                  <span class="report-stat-label">Duration</span>
+                  <span class="report-stat-value">
+                    <%= Math.floor(report.duration_seconds / 60) %>:<%= (Math.floor(report.duration_seconds % 60)).toString().padStart(2, '0') %>
+                  </span>
+                </div>
+                
+                <div class="report-stat-row">
+                  <span class="report-stat-label">Total Violations</span>
+                  <span class="report-stat-value" style="color: #ff4444;"><%= report.total_violations %></span>
+                </div>
+                
+                <div class="report-stat-row">
+                  <span class="report-stat-label">Risk Score</span>
+                  <span class="report-stat-value"><%= report.risk_score %></span>
+                </div>
+                
+                <div class="report-stat-row" style="border: none; padding-top: 1rem;">
+                  <span class="report-stat-label">Risk Level</span>
+                  <span class="risk-badge <%= report.risk_score < 25 ? 'risk-low' : report.risk_score < 50 ? 'risk-moderate' : 'risk-high' %>">
+                    <%= report.risk_score < 25 ? 'LOW' : report.risk_score < 50 ? 'MODERATE' : 'HIGH' %>
+                  </span>
+                </div>
+              </div>
+              
+              <div class="report-actions">
+                <button class="btn-preview btn-small" onclick="previewReport('<%= report._id %>')">
+                  <span class="material-icons" style="font-size: 1.1rem;">visibility</span>
+                  Preview
+                </button>
+                <a href="/history/download/<%= report.filename %>" class="btn-download btn-small" style="text-decoration: none;">
+                  <span class="material-icons" style="font-size: 1.1rem;">download</span>
+                  Download
+                </a>
+                <button class="btn-delete btn-small" onclick="deleteReport('<%= report._id %>', this)">
+                  <span class="material-icons" style="font-size: 1.1rem;">delete</span>
+                </button>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <div class="no-reports">
+          <div class="no-reports-icon">
+            <span class="material-icons" style="font-size: 6rem;">folder_open</span>
+          </div>
+          <h2 class="no-reports-text">No Reports Yet</h2>
+          <p class="no-reports-subtext">Start a monitoring session to generate your first report</p>
+          <a href="/monitoring" class="btn-primary btn-large">
+            <span class="material-icons">videocam</span>
+            Start Monitoring
+          </a>
+        </div>
+      <% } %>
+    </div>
+  </main>
+
+  <!-- Preview Modal -->
+  <div id="previewModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <span class="material-icons">description</span>
+          Report Details
+        </h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <p style="text-align: center; color: var(--text-muted);">Loading...</p>
+      </div>
+    </div>
+  </div>
+  
+  <%- include('partials/footer') %>
+  
+  <script src="/js/main.js"></script>
+  <script>
+    function previewReport(reportId) {
+      const modal = document.getElementById('previewModal');
+      const modalBody = document.getElementById('modalBody');
+      
+      modalBody.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Loading...</p>';
+      modal.style.display = 'block';
+      
+      fetch(`/history/view/${reportId}`)
+        .then(response => response.json())
+        .then(report => {
+          const riskLevel = report.risk_score < 25 ? 'LOW' : report.risk_score < 50 ? 'MODERATE' : 'HIGH';
+          const riskClass = report.risk_score < 25 ? 'risk-low' : report.risk_score < 50 ? 'risk-moderate' : 'risk-high';
+          
+          let violationsHTML = '';
+          if (report.violations && report.violations.length > 0) {
+            violationsHTML = report.violations.map(v => `
+              <div class="violation-item severity-${v.severity.toLowerCase()}" style="margin-bottom: 0.8rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="material-icons" style="font-size: 0.9rem;">error_outline</span>
+                    <strong>${v.type}</strong>
+                  </div>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span class="severity-badge">${v.severity}</span>
+                    <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">${v.timestamp.split(' ')[1]}</span>
+                  </div>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            violationsHTML = '<p style="color: var(--text-muted); text-align: center;">No violations recorded</p>';
+          }
+          
+          modalBody.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+              <div class="report-stat">
+                <div class="report-stat-label">Session Date</div>
+                <div class="report-stat-value" style="font-size: 1.2rem;">${report.date}</div>
+              </div>
+              <div class="report-stat">
+                <div class="report-stat-label">Duration</div>
+                <div class="report-stat-value" style="font-size: 1.5rem;">
+                  ${Math.floor(report.duration_seconds / 60)}:${(Math.floor(report.duration_seconds % 60)).toString().padStart(2, '0')}
+                </div>
+              </div>
+              <div class="report-stat">
+                <div class="report-stat-label">Total Violations</div>
+                <div class="report-stat-value" style="font-size: 1.5rem; color: #ff4444;">${report.total_violations}</div>
+              </div>
+              <div class="report-stat">
+                <div class="report-stat-label">Risk Score</div>
+                <div class="report-stat-value" style="font-size: 1.5rem;">${report.risk_score}</div>
+              </div>
+              <div class="report-stat">
+                <div class="report-stat-label">Risk Level</div>
+                <div class="report-stat-value">
+                  <span class="risk-badge ${riskClass}">${riskLevel}</span>
+                </div>
+              </div>
+              <div class="report-stat">
+                <div class="report-stat-label">Total Blinks</div>
+                <div class="report-stat-value" style="font-size: 1.5rem;">${report.total_blinks}</div>
+              </div>
+              <div class="report-stat">
+                <div class="report-stat-label">Gaze Away</div>
+                <div class="report-stat-value" style="font-size: 1.5rem;">${report.gaze_away_count}</div>
+              </div>
+              <div class="report-stat">
+                <div class="report-stat-label">No Face</div>
+                <div class="report-stat-value" style="font-size: 1.5rem;">${report.no_face_count}</div>
+              </div>
+              <div class="report-stat">
+                <div class="report-stat-label">Multiple Faces</div>
+                <div class="report-stat-value" style="font-size: 1.5rem;">${report.multiple_faces_count}</div>
+              </div>
+              <div class="report-stat">
+                <div class="report-stat-label">Talking Detected</div>
+                <div class="report-stat-value" style="font-size: 1.5rem;">${report.talking_count}</div>
+              </div>
+            </div>
+            
+            <div class="violations-section">
+              <h3 class="violations-title">
+                <span class="material-icons">assignment</span>
+                Violations Log (${report.violations.length})
+              </h3>
+              <div class="violations-list">
+                ${violationsHTML}
+              </div>
+            </div>
+          `;
+        })
+        .catch(err => {
+          console.error('Error loading report:', err);
+          modalBody.innerHTML = '<p style="text-align: center; color: #ff4444;">Error loading report</p>';
+        });
+    }
+    
+    function closeModal() {
+      document.getElementById('previewModal').style.display = 'none';
+    }
+    
+    function deleteReport(reportId, button) {
+      if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+        return;
+      }
+      
+      button.disabled = true;
+      button.innerHTML = '<span class="material-icons" style="font-size: 1.1rem;">hourglass_empty</span>';
+      
+      fetch(`/history/delete/${reportId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('Error deleting report: ' + data.error);
+          button.disabled = false;
+          button.innerHTML = '<span class="material-icons" style="font-size: 1.1rem;">delete</span>';
+        }
+      })
+      .catch(err => {
+        console.error('Error deleting report:', err);
+        alert('Error deleting report');
+        button.disabled = false;
+        button.innerHTML = '<span class="material-icons" style="font-size: 1.1rem;">delete</span>';
+      });
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('previewModal');
+      if (event.target == modal) {
+        closeModal();
+      }
+    }
+  </script>
+</body>
+</html>
