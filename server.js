@@ -251,12 +251,14 @@ io.on('connection', (socket) => {
   });
 });
 
-// Set port
+// Set port and host
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0'; // Critical for Render deployment
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   console.log(`═══════════════════════════════════════════════`);
   console.log(`    VigilCam Server Running on Port ${PORT}`);
+  console.log(`    Host: ${HOST}`);
   console.log(`    Access at: http://localhost:${PORT}`);
   console.log(`    WebSocket Server: Active`);
   console.log(`    Python Command: ${pythonCommand}`);
