@@ -6,10 +6,20 @@
   <title><%= title %></title>
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <!-- Load MediaPipe and Camera Utils -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1620248257/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6.1629159505/control_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1620248257/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js"></script>
+  
+  <!-- Socket.IO for real-time updates -->
   <script src="/socket.io/socket.io.js"></script>
+  
+  <!-- ML Detector -->
+  <script src="/js/ml-detector.js"></script>
+  
   <style>
-    /* Enhanced monitoring layout styles - FIXED ALIGNMENT */
     .monitoring-layout {
       display: grid;
       grid-template-columns: minmax(600px, 2fr) 420px;
@@ -27,18 +37,65 @@
       gap: 1.5rem;
     }
 
-    .camera-container {
-      width: 100%;
-    }
-
     .camera-feed {
       background: var(--bg-card);
       border: 2px solid var(--border-color);
       border-radius: 12px;
-      aspect-ratio: 16/9;
       position: relative;
       overflow: hidden;
       width: 100%;
+      aspect-ratio: 16/9;
+    }
+
+    .camera-feed video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* Mirror effect */
+    }
+
+    .camera-feed canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      transform: scaleX(-1); /* Mirror effect */
+    }
+
+    .calibration-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .calibration-text {
+      color: white;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .calibration-progress {
+      width: 80%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .calibration-progress-bar {
+      height: 100%;
+      background: #00ffff;
+      transition: width 0.3s ease;
     }
 
     .stats-section {
@@ -49,14 +106,6 @@
       top: 20px;
       max-height: calc(100vh - 100px);
       overflow-y: auto;
-      width: 100%;
-    }
-
-    .stats-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      width: 100%;
     }
 
     .stat-card {
@@ -67,84 +116,8 @@
       display: flex;
       align-items: center;
       gap: 1rem;
-      transition: all 0.3s ease;
     }
 
-    .stat-card:hover {
-      border-color: rgba(255, 255, 255, 0.3);
-      transform: translateY(-2px);
-    }
-
-    .stat-icon {
-      font-size: 2rem;
-      opacity: 0.8;
-      min-width: 32px;
-    }
-
-    .stat-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-
-    .stat-label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--primary-color);
-    }
-
-    .violations-panel {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1.5rem;
-      max-height: 450px;
-      overflow-y: auto;
-      width: 100%;
-    }
-
-    .violations-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .violations-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
-    .camera-risk-panel {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 100%;
-    }
-
-    .risk-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-
-    /* Report Panel Styles */
     .report-panel-inline {
       background: rgba(0, 255, 0, 0.1);
       border: 2px solid var(--success-color);
@@ -156,84 +129,18 @@
       margin-right: auto;
     }
 
-    .report-header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.8rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .report-header h3 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--success-color);
-      margin: 0;
-    }
-
-    .report-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .report-stat {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 1.5rem;
-      text-align: center;
-    }
-
-    .report-stat-label {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-bottom: 0.5rem;
-    }
-
-    .report-stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--primary-color);
-    }
-
-    .report-actions {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
     @media (max-width: 1200px) {
       .monitoring-layout {
         grid-template-columns: 1fr;
       }
-
       .stats-section {
         position: relative;
         max-height: none;
       }
     }
-
-    @media (max-width: 768px) {
-      .monitoring-layout {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-      }
-
-      .stat-card {
-        padding: 1rem;
-      }
-
-      .camera-feed {
-        aspect-ratio: 4/3;
-      }
-    }
   </style>
 </head>
 <body>
-  <!-- Background Image -->
   <div class="background-image"></div>
   
   <%- include('partials/navbar') %>
@@ -254,7 +161,6 @@
         </p>
       </div>
 
-      <!-- Control Buttons -->
       <div class="monitoring-controls">
         <button id="startBtn" class="btn-primary btn-large">
           <span class="material-icons">play_arrow</span>
@@ -266,28 +172,28 @@
         </button>
       </div>
 
-      <!-- FIXED LAYOUT: Camera Left, Stats Right -->
       <div class="monitoring-layout">
         
-        <!-- LEFT SIDE: Camera Section -->
+        <!-- Camera Section -->
         <div class="camera-section">
-          <div class="camera-container">
-            <div class="camera-feed">
-              <div class="camera-overlay">
-                <div class="scan-line" id="scanLine"></div>
+          <div class="camera-feed">
+            <video id="videoElement" autoplay playsinline></video>
+            <canvas id="outputCanvas"></canvas>
+            
+            <!-- Calibration Overlay -->
+            <div id="calibrationOverlay" class="calibration-overlay" style="display: none;">
+              <div class="calibration-text">
+                <span class="material-icons" style="font-size: 3rem; display: block; margin-bottom: 1rem;">face</span>
+                Look straight at the camera
               </div>
-              <img id="cameraStream" class="camera-stream" alt="Camera Feed" style="display: none;">
-              <div class="camera-placeholder" id="cameraPlaceholder">
-                <div class="camera-icon">
-                  <span class="material-icons" style="font-size: 5rem; color: rgba(255,255,255,0.3);">videocam</span>
-                </div>
-                <h2 class="camera-text">CAMERA FEED READY</h2>
-                <p class="camera-subtext">Click "START MONITORING" to begin surveillance</p>
+              <div class="calibration-progress">
+                <div id="calibrationProgress" class="calibration-progress-bar" style="width: 0%"></div>
               </div>
+              <p style="color: rgba(255,255,255,0.7); margin-top: 1rem;">Calibrating gaze tracking...</p>
             </div>
           </div>
 
-          <!-- Risk Score Below Camera -->
+          <!-- Risk Panel -->
           <div class="camera-risk-panel">
             <h3 class="risk-title">
               <span class="material-icons">security</span>
@@ -300,10 +206,8 @@
           </div>
         </div>
 
-        <!-- RIGHT SIDE: Stats & Violations (Sticky) -->
+        <!-- Stats Section -->
         <div class="stats-section">
-          
-          <!-- Live Stats Panel -->
           <div class="stats-panel">
             <div class="stat-card">
               <div class="stat-icon">
@@ -356,26 +260,27 @@
               <p class="no-violations">No violations detected yet</p>
             </div>
           </div>
-
         </div>
       </div>
 
-      <!-- IN-PAGE REPORT DISPLAY -->
+      <!-- Report Panel -->
       <div class="report-panel-inline" id="reportPanel" style="display: none;">
         <div class="report-header">
           <span class="material-icons" style="font-size: 2rem; color: var(--success-color);">description</span>
           <h3>SESSION REPORT GENERATED</h3>
         </div>
         
-        <div class="report-grid" id="reportGrid">
-          <!-- Stats will be dynamically inserted here -->
-        </div>
+        <div class="report-grid" id="reportGrid"></div>
 
         <div class="report-actions">
           <button id="downloadReportBtn" class="btn-primary btn-large">
             <span class="material-icons">download</span>
             DOWNLOAD JSON REPORT
           </button>
+          <a href="/history" class="btn-secondary btn-large">
+            <span class="material-icons">history</span>
+            VIEW ALL REPORTS
+          </a>
           <button id="newSessionBtn" class="btn-secondary btn-large">
             <span class="material-icons">refresh</span>
             START NEW SESSION
@@ -391,142 +296,175 @@
   <script>
     const socket = io();
     const userId = '<%= user._id %>';
+    let detector = null;
     let isMonitoring = false;
-    let currentReport = null;
     let sessionStartTime = null;
     let timerInterval = null;
+    let currentReport = null;
 
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
-    const cameraStream = document.getElementById('cameraStream');
-    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+    const videoElement = document.getElementById('videoElement');
+    const outputCanvas = document.getElementById('outputCanvas');
+    const calibrationOverlay = document.getElementById('calibrationOverlay');
     const statusIndicator = document.getElementById('statusIndicator');
     const monitoringStatus = document.getElementById('monitoringStatus');
-    const scanLine = document.getElementById('scanLine');
-    const reportPanel = document.getElementById('reportPanel');
-    const sessionTimeEl = document.getElementById('sessionTime');
 
+    // Timer update
     function updateSessionTime() {
       if (sessionStartTime) {
         const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
         const minutes = Math.floor(elapsed / 60);
         const seconds = elapsed % 60;
-        sessionTimeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        document.getElementById('sessionTime').textContent = 
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       }
     }
 
-    startBtn.addEventListener('click', () => {
-      startBtn.style.display = 'none';
-      stopBtn.style.display = 'inline-flex';
-      cameraPlaceholder.style.display = 'none';
-      cameraStream.style.display = 'block';
-      scanLine.style.display = 'block';
-      statusIndicator.classList.add('active');
-      monitoringStatus.textContent = 'MONITORING ACTIVE';
-      reportPanel.style.display = 'none';
-      
-      // Reset stats
-      document.getElementById('gazeStatus').textContent = '—';
-      document.getElementById('facesDetected').textContent = '0';
-      document.getElementById('blinksCount').textContent = '0';
-      document.getElementById('violationsCount').textContent = '0';
-      document.getElementById('riskValue').textContent = '0';
-      document.getElementById('riskBar').style.width = '0%';
-      document.getElementById('violationsList').innerHTML = '<p class="no-violations">No violations detected yet</p>';
-      
-      sessionStartTime = Date.now();
-      timerInterval = setInterval(updateSessionTime, 1000);
-      
-      isMonitoring = true;
-      socket.emit('start-monitoring', { userId: userId });
-    });
+    // Start monitoring
+    startBtn.addEventListener('click', async () => {
+      try {
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> INITIALIZING...';
 
-    stopBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to stop monitoring? The session report will be generated.')) {
-        stopBtn.disabled = true;
-        stopBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> STOPPING...';
-        socket.emit('stop-monitoring');
-      }
-    });
+        // Initialize detector
+        detector = new MLDetector();
+        await detector.initialize();
 
-    socket.on('detection-data', (data) => {
-      console.log('Received data:', data.type); // Debug log
-      
-      if (data.type === 'frame' && data.frame) {
-        cameraStream.src = 'data:image/jpeg;base64,' + data.frame;
-        
-        if (data.stats) {
-          document.getElementById('gazeStatus').textContent = data.stats.gaze || '—';
-          document.getElementById('facesDetected').textContent = data.stats.num_faces || 0;
-          document.getElementById('blinksCount').textContent = data.stats.blinks || 0;
-          document.getElementById('violationsCount').textContent = data.stats.violations || 0;
+        // Show calibration overlay
+        calibrationOverlay.style.display = 'flex';
+        monitoringStatus.textContent = 'CALIBRATING...';
+
+        // Run calibration
+        await detector.startCalibration((progress) => {
+          document.getElementById('calibrationProgress').style.width = progress + '%';
+        });
+
+        // Hide calibration, show monitoring
+        calibrationOverlay.style.display = 'none';
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-flex';
+        statusIndicator.classList.add('active');
+        monitoringStatus.textContent = 'MONITORING ACTIVE';
+
+        // Setup detector callbacks
+        detector.onViolation = (violation) => {
+          addViolationToLog(violation);
+          showViolationAlert(violation);
           
-          const riskScore = data.stats.risk_score || 0;
-          document.getElementById('riskValue').textContent = riskScore;
-          const riskBar = document.getElementById('riskBar');
-          riskBar.style.width = Math.min(riskScore, 100) + '%';
-          
-          if (riskScore < 25) {
-            riskBar.style.background = '#00ff00';
-          } else if (riskScore < 50) {
-            riskBar.style.background = '#ffaa00';
-          } else {
-            riskBar.style.background = '#ff4444';
+          // Send to server
+          socket.emit('violation', {
+            userId: userId,
+            violation: violation
+          });
+        };
+
+        // Start monitoring
+        sessionStartTime = Date.now();
+        timerInterval = setInterval(updateSessionTime, 1000);
+        detector.startMonitoring();
+        isMonitoring = true;
+
+        // Update stats periodically
+        setInterval(() => {
+          if (isMonitoring) {
+            const stats = detector.getStats();
+            updateStatsDisplay(stats);
           }
-        }
-      }
-      
-      if (data.type === 'violation' && data.data) {
-        addViolationToLog(data.data);
-        showViolationAlert(data.data);
-      }
-      
-      if (data.type === 'status') {
-        monitoringStatus.textContent = data.message.toUpperCase();
-      }
-      
-      if (data.type === 'report') {
-        console.log('Report received:', data.data); // Debug log
-        currentReport = data.data;
-        stopMonitoring();
-        showInlineReport(data.data);
-      }
-      
-      if (data.type === 'complete') {
-        console.log('Session complete'); // Debug log
-        stopMonitoring();
+        }, 500);
+
+        // Notify server
+        socket.emit('start-monitoring', { userId: userId });
+
+      } catch (error) {
+        console.error('Failed to start monitoring:', error);
+        alert('Failed to start monitoring: ' + error.message);
+        resetUI();
       }
     });
 
-    socket.on('monitoring-stopped', () => {
-      console.log('Monitoring stopped event received'); // Debug log
-      // Don't call stopMonitoring here, wait for report
+    // Stop monitoring
+    stopBtn.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to stop monitoring? The session report will be generated.')) {
+        await stopMonitoring();
+      }
     });
 
-    socket.on('error', (error) => {
-      console.error('Socket error:', error);
-      alert('Error: ' + error.message);
-      stopMonitoring();
-    });
-
-    function stopMonitoring() {
+    async function stopMonitoring() {
       isMonitoring = false;
-      startBtn.style.display = 'inline-flex';
-      stopBtn.style.display = 'none';
-      stopBtn.disabled = false;
-      stopBtn.innerHTML = '<span class="material-icons">stop</span> STOP MONITORING';
-      cameraStream.style.display = 'none';
-      cameraPlaceholder.style.display = 'block';
-      scanLine.style.display = 'none';
-      statusIndicator.classList.remove('active');
-      monitoringStatus.textContent = 'MONITORING STOPPED';
-      
+      stopBtn.disabled = true;
+      stopBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> GENERATING REPORT...';
+
       if (timerInterval) {
         clearInterval(timerInterval);
       }
+
+      // Get final stats
+      const finalStats = detector.getStats();
+      const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+
+      // Create report
+      const report = {
+        userId: userId,
+        timestamp: new Date().toISOString(),
+        date: new Date().toLocaleString(),
+        duration_seconds: duration,
+        total_violations: finalStats.violations.length,
+        risk_score: finalStats.riskScore,
+        total_blinks: finalStats.totalBlinks,
+        violations: finalStats.violations,
+        gaze_away_count: finalStats.violations.filter(v => v.type.includes('GAZE')).length,
+        no_face_count: finalStats.violations.filter(v => v.type.includes('FRAME')).length,
+        multiple_faces_count: finalStats.violations.filter(v => v.type.includes('MULTIPLE')).length,
+        talking_count: finalStats.violations.filter(v => v.type.includes('TALKING')).length,
+        eyes_closed_count: finalStats.violations.filter(v => v.type.includes('EYES')).length,
+        excessive_blink_count: finalStats.violations.filter(v => v.type.includes('EXCESSIVE')).length
+      };
+
+      // Save to server
+      socket.emit('save-report', report);
+
+      // Cleanup detector
+      detector.cleanup();
+      detector = null;
+
+      // Show report
+      currentReport = report;
+      showInlineReport(report);
+
+      // Reset UI
+      resetUI();
+    }
+
+    function resetUI() {
+      startBtn.style.display = 'inline-flex';
+      startBtn.disabled = false;
+      startBtn.innerHTML = '<span class="material-icons">play_arrow</span> START MONITORING';
+      stopBtn.style.display = 'none';
+      stopBtn.disabled = false;
+      stopBtn.innerHTML = '<span class="material-icons">stop</span> STOP MONITORING';
+      statusIndicator.classList.remove('active');
+      monitoringStatus.textContent = 'MONITORING STOPPED';
+    }
+
+    function updateStatsDisplay(stats) {
+      document.getElementById('gazeStatus').textContent = stats.gazeDirection;
+      document.getElementById('facesDetected').textContent = stats.facesDetected;
+      document.getElementById('blinksCount').textContent = stats.totalBlinks;
+      document.getElementById('violationsCount').textContent = stats.violations.length;
       
-      cameraPlaceholder.querySelector('.camera-text').textContent = 'SESSION ENDED';
-      cameraPlaceholder.querySelector('.camera-subtext').textContent = 'Check your report below';
+      const riskScore = stats.riskScore;
+      document.getElementById('riskValue').textContent = riskScore;
+      const riskBar = document.getElementById('riskBar');
+      riskBar.style.width = Math.min(riskScore, 100) + '%';
+      
+      if (riskScore < 25) {
+        riskBar.style.background = '#00ff00';
+      } else if (riskScore < 50) {
+        riskBar.style.background = '#ffaa00';
+      } else {
+        riskBar.style.background = '#ff4444';
+      }
     }
 
     function addViolationToLog(violation) {
@@ -538,23 +476,7 @@
       }
       
       const violationItem = document.createElement('div');
-      violationItem.style.cssText = `
-        background: rgba(255, 255, 255, 0.05);
-        border-left: 4px solid;
-        border-radius: 8px;
-        padding: 0.8rem;
-        margin-bottom: 0.5rem;
-        animation: slideIn 0.3s ease;
-      `;
-      
-      if (violation.severity === 'HIGH') {
-        violationItem.style.borderColor = '#ff4444';
-      } else if (violation.severity === 'MEDIUM') {
-        violationItem.style.borderColor = '#ffaa00';
-      } else {
-        violationItem.style.borderColor = '#00aaff';
-      }
-      
+      violationItem.className = 'violation-item severity-' + violation.severity.toLowerCase();
       violationItem.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -562,8 +484,8 @@
             <strong>${violation.type}</strong>
           </div>
           <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <span style="padding: 0.2rem 0.5rem; background: ${violation.severity === 'HIGH' ? '#ff4444' : violation.severity === 'MEDIUM' ? '#ffaa00' : '#00aaff'}; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${violation.severity}</span>
-            <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">${violation.timestamp.split(' ')[1]}</span>
+            <span class="severity-badge">${violation.severity}</span>
+            <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">${new Date(violation.timestamp).toLocaleTimeString()}</span>
           </div>
         </div>
       `;
@@ -592,8 +514,6 @@
     }
 
     function showInlineReport(report) {
-      console.log('Displaying report:', report); // Debug log
-      
       const reportGrid = document.getElementById('reportGrid');
       
       const durationMinutes = Math.floor(report.duration_seconds / 60);
@@ -626,32 +546,16 @@
           <div class="report-stat-label">Gaze Away Count</div>
           <div class="report-stat-value">${report.gaze_away_count}</div>
         </div>
-        <div class="report-stat">
-          <div class="report-stat-label">No Face Detected</div>
-          <div class="report-stat-value">${report.no_face_count}</div>
-        </div>
-        <div class="report-stat">
-          <div class="report-stat-label">Multiple Faces</div>
-          <div class="report-stat-value">${report.multiple_faces_count}</div>
-        </div>
-        <div class="report-stat">
-          <div class="report-stat-label">Talking Detected</div>
-          <div class="report-stat-value">${report.talking_count}</div>
-        </div>
-        <div class="report-stat">
-          <div class="report-stat-label">Eyes Closed</div>
-          <div class="report-stat-value">${report.eyes_closed_count}</div>
-        </div>
       `;
       
-      reportPanel.style.display = 'block';
+      document.getElementById('reportPanel').style.display = 'block';
       
-      // Scroll to report smoothly
       setTimeout(() => {
-        reportPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('reportPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
     }
 
+    // Report download
     document.getElementById('downloadReportBtn').addEventListener('click', () => {
       if (currentReport) {
         const dataStr = JSON.stringify(currentReport, null, 2);
@@ -659,34 +563,28 @@
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `exam_report_${currentReport.timestamp}.json`;
+        link.download = `vigilcam_report_${Date.now()}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
-        // Visual feedback
-        const btn = document.getElementById('downloadReportBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-icons">check_circle</span> DOWNLOADED!';
-        btn.style.background = '#00ff00';
-        btn.style.color = '#000';
-        
-        setTimeout(() => {
-          btn.innerHTML = originalText;
-          btn.style.background = '';
-          btn.style.color = '';
-        }, 2000);
       }
     });
 
+    // New session
     document.getElementById('newSessionBtn').addEventListener('click', () => {
       location.reload();
     });
 
+    // Socket events
+    socket.on('report-saved', (data) => {
+      console.log('Report saved to database:', data);
+    });
+
+    // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
-      if (isMonitoring) {
-        socket.emit('stop-monitoring');
+      if (detector) {
+        detector.cleanup();
       }
     });
   </script>
