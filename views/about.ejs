@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - VigilCam</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+  <!-- Background Image -->
+  <div class="background-image"></div>
+  
+  <%- include('partials/navbar') %>
+  
+  <main class="main-content">
+    <%- include('partials/messages') %>
+    
+    <section class="about-section">
+      <div class="about-header">
+        <h1 class="about-title">About VigilCam</h1>
+        <p class="about-subtitle">Professional AI-Powered Exam Proctoring & Surveillance System</p>
+      </div>
+
+      <!-- ML Detection Features -->
+      <h2 class="feature-section-title" style="text-align: center; font-size: 2rem; margin-bottom: 2rem;">
+        <span class="material-icons" style="vertical-align: middle; font-size: 2.5rem;">memory</span>
+        Advanced ML Detection Capabilities
+      </h2>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ffff;">face</span>
+          </div>
+          <h3 class="feature-title">Face Detection & Tracking</h3>
+          <p class="feature-description">
+            Real-time multi-face detection using MediaPipe Face Detection with confidence scoring. 
+            Automatically alerts when multiple faces appear or when the candidate leaves the frame.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ffff;">visibility</span>
+          </div>
+          <h3 class="feature-title">Gaze Tracking</h3>
+          <p class="feature-description">
+            Advanced iris position tracking with calibration system. Monitors where the candidate 
+            is looking with precision - detects looking away, up, down, left, or right.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ffff;">remove_red_eye</span>
+          </div>
+          <h3 class="feature-title">Blink Detection</h3>
+          <p class="feature-description">
+            Eye Aspect Ratio (EAR) calculation for accurate blink detection. Tracks normal and 
+            excessive blinking patterns, and detects extended eye closure (>4 seconds).
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ffff;">record_voice_over</span>
+          </div>
+          <h3 class="feature-title">Audio Monitoring</h3>
+          <p class="feature-description">
+            Real-time audio analysis using sounddevice library. Detects talking through mouth 
+            movement analysis and unusual noise levels with baseline calibration.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ffff;">3d_rotation</span>
+          </div>
+          <h3 class="feature-title">Head Pose Estimation</h3>
+          <p class="feature-description">
+            Nose tip landmark tracking for head orientation analysis. Identifies when candidates 
+            turn their head significantly away from the camera.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ffff;">analytics</span>
+          </div>
+          <h3 class="feature-title">Behavioral Analysis</h3>
+          <p class="feature-description">
+            Comprehensive violation detection and scoring system. Real-time risk assessment with 
+            severity levels (HIGH/MEDIUM/LOW) and detailed violation logging.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ffff;">videocam</span>
+          </div>
+          <h3 class="feature-title">Live Video Streaming</h3>
+          <p class="feature-description">
+            Base64-encoded JPEG streaming at 30 FPS with quality optimization. Low-latency 
+            WebSocket-based communication between Python ML backend and Node.js server.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ffff;">assessment</span>
+          </div>
+          <h3 class="feature-title">Comprehensive Reporting</h3>
+          <p class="feature-description">
+            Automatic JSON report generation with session duration, violation history, risk scores, 
+            and complete behavioral statistics. Downloadable for record-keeping.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ffff;">tune</span>
+          </div>
+          <h3 class="feature-title">Calibration System</h3>
+          <p class="feature-description">
+            3-second baseline calibration for gaze tracking accuracy. Establishes normal eye 
+            position and audio baseline for precise anomaly detection throughout the session.
+          </p>
+        </div>
+      </div>
+
+      <!-- Technology Stack -->
+      <h2 class="feature-section-title" style="text-align: center; font-size: 2rem; margin: 4rem 0 2rem;">
+        <span class="material-icons" style="vertical-align: middle; font-size: 2.5rem;">code</span>
+        Technology Stack
+      </h2>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ff00;">psychology</span>
+          </div>
+          <h3 class="feature-title">Computer Vision</h3>
+          <p class="feature-description">
+            OpenCV 4.x for video processing • MediaPipe Face Mesh for 468 facial landmarks • 
+            MediaPipe Face Detection for multi-face tracking
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ff00;">computer</span>
+          </div>
+          <h3 class="feature-title">Backend</h3>
+          <p class="feature-description">
+            Node.js + Express.js • Python 3.8+ • Socket.IO for real-time communication • 
+            PythonShell for process management
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons" style="font-size: 3rem; color: #00ff00;">storage</span>
+          </div>
+          <h3 class="feature-title">Database & Auth</h3>
+          <p class="feature-description">
+            MongoDB with Mongoose ORM • Passport.js authentication • bcrypt password hashing • 
+            Express sessions
+          </p>
+        </div>
+      </div>
+
+      <!-- Connect With Us -->
+      <div class="social-section">
+        <h2 class="social-title">
+          <span class="material-icons" style="vertical-align: middle; font-size: 2.5rem;">connect_without_contact</span>
+          Connect With Us
+        </h2>
+        
+        <div class="social-grid">
+          <a href="https://www.linkedin.com/in/azhaanalisiddiqui/" target="_blank" class="social-card linkedin">
+            <div class="social-icon">
+              <span class="material-icons" style="font-size: 3.5rem; color: #0077b5;">work</span>
+            </div>
+            <h3 class="social-name">LinkedIn</h3>
+            <p class="social-handle">Professional Network</p>
+          </a>
+
+          <a href="https://github.com/AzhaanGlitch" target="_blank" class="social-card github">
+            <div class="social-icon">
+              <span class="material-icons" style="font-size: 3.5rem;">code</span>
+            </div>
+            <h3 class="social-name">GitHub</h3>
+            <p class="social-handle">Open Source Projects</p>
+          </a>
+
+          <a href="#" target="_blank" class="social-card twitter">
+            <div class="social-icon">
+              <span class="material-icons" style="font-size: 3.5rem; color: #1da1f2;">tag</span>
+            </div>
+            <h3 class="social-name">Twitter</h3>
+            <p class="social-handle">Latest Updates</p>
+          </a>
+
+          <a href="mailto:azhaanalisiddiqui15@gmail.com" class="social-card email">
+            <div class="social-icon">
+              <span class="material-icons" style="font-size: 3.5rem; color: #ea4335;">email</span>
+            </div>
+            <h3 class="social-name">Email</h3>
+            <p class="social-handle">Direct Contact</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- Project Info -->
+      <div style="text-align: center; margin-top: 4rem; padding: 2rem; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
+        <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">
+          <span class="material-icons" style="vertical-align: middle;">info</span>
+          About This Project
+        </h3>
+        <p style="color: var(--text-secondary); max-width: 800px; margin: 0 auto; line-height: 1.8;">
+          VigilCam is a professional-grade exam proctoring system developed by <strong>Azhaan Ali Siddiqui</strong>. 
+          It combines advanced computer vision, machine learning, and real-time web technologies to provide 
+          comprehensive monitoring capabilities. The system is designed for educational institutions, 
+          certification providers, and organizations requiring secure remote examination environments.
+        </p>
+        <div style="margin-top: 2rem;">
+          <a href="https://github.com/AzhaanGlitch/VigilCam" target="_blank" class="btn-primary" style="display: inline-flex;">
+            <span class="material-icons">star</span>
+            Star on GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <%- include('partials/footer') %>
+  
+  <script src="/js/main.js"></script>
+</body>
+</html>
