@@ -3,6 +3,10 @@
 import sys
 import json
 import traceback
+import signal
+
+# Global flag for graceful shutdown
+shutdown_flag = False
 
 def output_json(data):
     """Send JSON data to Node.js via stdout"""
@@ -10,6 +14,16 @@ def output_json(data):
         print(json.dumps(data), flush=True)
     except Exception as e:
         print(json.dumps({'type': 'error', 'message': f'JSON output error: {str(e)}'}), flush=True)
+
+def signal_handler(signum, frame):
+    """Handle termination signals gracefully"""
+    global shutdown_flag
+    shutdown_flag = True
+    output_json({'type': 'status', 'message': 'Shutdown signal received'})
+
+# Register signal handlers
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
 
 # Send startup message
 output_json({'type': 'status', 'message': 'Python script starting...'})
@@ -154,7 +168,6 @@ def add_violation(violation_type, severity="MEDIUM"):
     else:
         exam_data['risk_score'] += 2
     
-    # Send violation alert
     output_json({
         'type': 'violation',
         'data': violation,
@@ -168,8 +181,8 @@ def audio_callback(indata, frames, time_info, status):
         rms = float(np.sqrt(np.mean(np.square(mono))))
         with _audio_lock:
             _audio_rms = rms
-    except Exception as e:
-        pass  # Silently ignore audio errors
+    except Exception:
+        pass
 
 def start_audio():
     global _audio_stream
@@ -232,24 +245,21 @@ def get_iris_avg(landmarks):
         return None, None
 
 def draw_face_mesh(frame, face_landmarks):
-    """Draw face mesh with bright cyan dots on the frame"""
     try:
         h, w, _ = frame.shape
         
-        # Define custom drawing specs for bright, visible landmarks
         landmark_drawing_spec = mp_drawing.DrawingSpec(
-            color=(0, 255, 255),  # Bright cyan color (BGR format)
+            color=(0, 255, 255),
             thickness=1,
             circle_radius=1
         )
         
         connection_drawing_spec = mp_drawing.DrawingSpec(
-            color=(0, 200, 200),  # Slightly dimmer cyan for connections
+            color=(0, 200, 200),
             thickness=1,
             circle_radius=1
         )
         
-        # Draw the tesselation (mesh)
         mp_drawing.draw_landmarks(
             image=frame,
             landmark_list=face_landmarks,
@@ -258,9 +268,8 @@ def draw_face_mesh(frame, face_landmarks):
             connection_drawing_spec=connection_drawing_spec
         )
         
-        # Draw contours with brighter color for better visibility
         contour_drawing_spec = mp_drawing.DrawingSpec(
-            color=(0, 255, 255),  # Bright cyan
+            color=(0, 255, 255),
             thickness=1,
             circle_radius=1
         )
@@ -273,9 +282,8 @@ def draw_face_mesh(frame, face_landmarks):
             connection_drawing_spec=contour_drawing_spec
         )
         
-        # Highlight iris with bright green
         iris_drawing_spec = mp_drawing.DrawingSpec(
-            color=(0, 255, 0),  # Bright green
+            color=(0, 255, 0),
             thickness=1,
             circle_radius=2
         )
@@ -288,21 +296,22 @@ def draw_face_mesh(frame, face_landmarks):
             connection_drawing_spec=iris_drawing_spec
         )
         
-    except Exception as e:
-        pass  # Silently ignore drawing errors
+    except Exception:
+        pass
 
 def save_exam_report():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Create reports directory if it doesn't exist
     os.makedirs('reports', exist_ok=True)
     
-    filename = f"reports/exam_report_{user_id}_{timestamp}.json"
+    filename = f"exam_report_{user_id}_{timestamp}.json"
+    filepath = os.path.join('reports', filename)
     
     elapsed = time.time() - exam_data['start_time']
     report = {
         'user_id': user_id,
         'timestamp': timestamp,
+        'date': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         'duration_seconds': elapsed,
         'total_violations': len(exam_data['violations']),
         'risk_score': exam_data['risk_score'],
@@ -313,32 +322,30 @@ def save_exam_report():
         'multiple_faces_count': exam_data['multiple_faces_count'],
         'talking_count': exam_data['talking_count'],
         'eyes_closed_count': exam_data['eyes_closed_count'],
-        'violations': exam_data['violations']
+        'violations': exam_data['violations'],
+        'filename': filename
     }
     
-    with open(filename, 'w') as f:
+    with open(filepath, 'w') as f:
         json.dump(report, f, indent=4)
     
-    # Send final report
     output_json({
         'type': 'report',
         'data': report,
         'filename': filename
     })
     
-    return filename
+    return filepath
 
 # Main execution
 try:
     output_json({'type': 'status', 'message': 'Initializing camera...'})
     
-    # Initialize audio
     audio_ok = start_audio()
     if audio_ok:
         calibrate_audio_baseline()
         output_json({'type': 'status', 'message': 'Audio initialized'})
 
-    # Open camera
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         output_json({'type': 'error', 'message': 'Cannot open camera'})
@@ -346,14 +353,13 @@ try:
 
     output_json({'type': 'status', 'message': 'Camera opened successfully'})
 
-    # Calibration phase
     output_json({'type': 'status', 'message': 'Calibrating - look straight at camera'})
     
     calib_x = []
     calib_y = []
     calib_start = time.time()
     
-    while time.time() - calib_start < CALIB_SECONDS:
+    while time.time() - calib_start < CALIB_SECONDS and not shutdown_flag:
         ret, frame = cap.read()
         if not ret:
             continue
@@ -371,10 +377,8 @@ try:
                 calib_x.append(avgx)
                 calib_y.append(avgy)
             
-            # Draw face mesh during calibration
             draw_face_mesh(frame, mesh.multi_face_landmarks[0])
         
-        # Send frame for calibration display
         _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
         frame_base64 = base64.b64encode(buffer).decode('utf-8')
         
@@ -408,7 +412,7 @@ try:
     noise_frames = 0
 
     frame_count = 0
-    while True:
+    while not shutdown_flag:
         ret, frame = cap.read()
         if not ret:
             break
@@ -439,10 +443,8 @@ try:
             no_face_start = None
             lm = mesh.multi_face_landmarks[0].landmark
 
-            # DRAW FACE MESH WITH BRIGHT COLORS
             draw_face_mesh(frame, mesh.multi_face_landmarks[0])
 
-            # Eye aspect ratio for blink detection
             left_ear = eye_aspect_ratio(lm, LEFT_EYE, w, h)
             right_ear = eye_aspect_ratio(lm, RIGHT_EYE, w, h)
             avg_ear = (left_ear + right_ear) / 2.0
@@ -464,14 +466,12 @@ try:
                 blink_frames = 0
                 eyes_closed_start = None
 
-            # Check for excessive blinking
             if len(blink_history) >= 60:
                 recent_blinks = sum(1 for t in blink_history if time.time() - t < 60)
                 if recent_blinks > EXCESSIVE_BLINK_THRESHOLD:
                     add_violation("EXCESSIVE BLINKING", "MEDIUM")
                     exam_data['excessive_blink_count'] += 1
 
-            # Mouth movement detection
             mar = mouth_aspect_ratio(lm, w, h)
             mouth_history.append(mar)
             
@@ -490,12 +490,10 @@ try:
                 else:
                     talking_start = None
 
-            # Head turn detection
             head_turned = check_head_turn(lm)
             if head_turned:
                 add_violation("HEAD TURNED AWAY", "MEDIUM")
 
-            # Gaze tracking
             avgx, avgy = get_iris_avg(lm)
             if avgx is None:
                 gaze_dir = "UNKNOWN"
@@ -521,7 +519,6 @@ try:
                 else:
                     gaze_away_start = None
 
-            # Audio monitoring
             with _audio_lock:
                 current_rms = _audio_rms
             
@@ -544,11 +541,9 @@ try:
                     exam_data['no_face_count'] += 1
                     no_face_start = time.time()
 
-        # Encode frame for streaming
         _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
         frame_base64 = base64.b64encode(buffer).decode('utf-8')
         
-        # Send frame and stats
         output_json({
             'type': 'frame',
             'frame': frame_base64,
@@ -563,9 +558,7 @@ try:
         })
         
         frame_count += 1
-        
-        # Small delay to control frame rate
-        time.sleep(0.033)  # ~30 FPS
+        time.sleep(0.033)
 
 except KeyboardInterrupt:
     output_json({'type': 'status', 'message': 'Monitoring stopped by user'})
@@ -573,13 +566,13 @@ except Exception as e:
     output_json({'type': 'error', 'message': f'Fatal error: {str(e)}'})
     output_json({'type': 'error', 'message': f'Traceback: {traceback.format_exc()}'})
 finally:
-    # Save report
+    output_json({'type': 'status', 'message': 'Generating report...'})
+    
     try:
         save_exam_report()
     except Exception as e:
         output_json({'type': 'error', 'message': f'Report save failed: {str(e)}'})
     
-    # Cleanup
     try:
         if _audio_stream is not None:
             _audio_stream.stop()
@@ -591,3 +584,4 @@ finally:
         cap.release()
     
     output_json({'type': 'complete', 'message': 'Monitoring session ended'})
+    sys.exit(0)
