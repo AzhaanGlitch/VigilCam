@@ -42,90 +42,101 @@
         </button>
       </div>
 
-      <!-- Camera Feed Container - CENTERED -->
-      <div class="camera-container">
-        <div class="camera-feed">
-          <div class="camera-overlay">
-            <div class="scan-line" id="scanLine"></div>
-          </div>
-          <img id="cameraStream" class="camera-stream" alt="Camera Feed" style="display: none;">
-          <div class="camera-placeholder" id="cameraPlaceholder">
-            <div class="camera-icon">
-              <span class="material-icons" style="font-size: 5rem; color: rgba(255,255,255,0.3);">videocam</span>
+      <!-- SPLIT SCREEN LAYOUT: Camera Left, Stats Right -->
+      <div class="monitoring-layout">
+        
+        <!-- LEFT SIDE: Camera Section -->
+        <div class="camera-section">
+          <div class="camera-container">
+            <div class="camera-feed">
+              <div class="camera-overlay">
+                <div class="scan-line" id="scanLine"></div>
+              </div>
+              <img id="cameraStream" class="camera-stream" alt="Camera Feed" style="display: none;">
+              <div class="camera-placeholder" id="cameraPlaceholder">
+                <div class="camera-icon">
+                  <span class="material-icons" style="font-size: 5rem; color: rgba(255,255,255,0.3);">videocam</span>
+                </div>
+                <h2 class="camera-text">CAMERA FEED READY</h2>
+                <p class="camera-subtext">Click "START MONITORING" to begin surveillance</p>
+              </div>
             </div>
-            <h2 class="camera-text">CAMERA FEED READY</h2>
-            <p class="camera-subtext">Click "START MONITORING" to begin surveillance</p>
           </div>
+
+          <!-- Risk Score Below Camera -->
+          <div class="camera-risk-panel">
+            <h3 class="risk-title">
+              <span class="material-icons">security</span>
+              THREAT LEVEL
+            </h3>
+            <div class="risk-bar-container">
+              <div class="risk-bar" id="riskBar"></div>
+            </div>
+            <span class="risk-value" id="riskValue">0</span>
+          </div>
+        </div>
+
+        <!-- RIGHT SIDE: Stats & Violations -->
+        <div class="stats-section">
+          
+          <!-- Live Stats Panel -->
+          <div class="stats-panel">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <span class="material-icons" style="font-size: 2.25rem; color: #00ffff;">visibility</span>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Gaze Direction</span>
+                <span class="stat-value" id="gazeStatus">—</span>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon">
+                <span class="material-icons" style="font-size: 2.25rem; color: #00ffff;">face</span>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Faces Detected</span>
+                <span class="stat-value" id="facesDetected">0</span>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon">
+                <span class="material-icons" style="font-size: 2.25rem; color: #00ffff;">remove_red_eye</span>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Total Blinks</span>
+                <span class="stat-value" id="blinksCount">0</span>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon">
+                <span class="material-icons" style="font-size: 2.25rem; color: #ff4444;">warning</span>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Violations</span>
+                <span class="stat-value error-color" id="violationsCount">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Violations Log -->
+          <div class="violations-panel">
+            <h3 class="violations-title">
+              <span class="material-icons">assignment</span>
+              VIOLATIONS LOG
+            </h3>
+            <div class="violations-list" id="violationsList">
+              <p class="no-violations">No violations detected yet</p>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Live Stats Panel -->
-      <div class="stats-panel">
-        <div class="stat-card">
-          <div class="stat-icon">
-            <span class="material-icons" style="font-size: 2.5rem; color: #00ffff;">visibility</span>
-          </div>
-          <div class="stat-content">
-            <span class="stat-label">Gaze Direction</span>
-            <span class="stat-value" id="gazeStatus">—</span>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon">
-            <span class="material-icons" style="font-size: 2.5rem; color: #00ffff;">face</span>
-          </div>
-          <div class="stat-content">
-            <span class="stat-label">Faces Detected</span>
-            <span class="stat-value" id="facesDetected">0</span>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon">
-            <span class="material-icons" style="font-size: 2.5rem; color: #00ffff;">remove_red_eye</span>
-          </div>
-          <div class="stat-content">
-            <span class="stat-label">Total Blinks</span>
-            <span class="stat-value" id="blinksCount">0</span>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon">
-            <span class="material-icons" style="font-size: 2.5rem; color: #ff4444;">warning</span>
-          </div>
-          <div class="stat-content">
-            <span class="stat-label">Violations</span>
-            <span class="stat-value error-color" id="violationsCount">0</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Risk Score Bar -->
-      <div class="risk-panel">
-        <h3 class="risk-title">
-          <span class="material-icons">security</span>
-          THREAT LEVEL ASSESSMENT
-        </h3>
-        <div class="risk-bar-container">
-          <div class="risk-bar" id="riskBar"></div>
-        </div>
-        <span class="risk-value" id="riskValue">0</span>
-      </div>
-
-      <!-- Violations Log -->
-      <div class="violations-panel">
-        <h3 class="violations-title">
-          <span class="material-icons">assignment</span>
-          VIOLATIONS LOG
-        </h3>
-        <div class="violations-list" id="violationsList">
-          <p class="no-violations">No violations detected yet</p>
-        </div>
-      </div>
-
-      <!-- Download Report Section -->
+      <!-- Download Report Section - Full Width Below -->
       <div class="report-panel" id="reportPanel" style="display: none;">
         <h3 class="report-title">
           <span class="material-icons">description</span>
@@ -275,25 +286,30 @@
       const violationItem = document.createElement('div');
       violationItem.className = 'violation-item severity-' + violation.severity.toLowerCase();
       
+      const violationHeader = document.createElement('div');
+      violationHeader.className = 'violation-header';
+      
       const severityBadge = document.createElement('span');
       severityBadge.className = 'severity-badge';
       severityBadge.textContent = violation.severity;
-      
-      const violationType = document.createElement('span');
-      violationType.className = 'violation-type';
-      violationType.innerHTML = `<span class="material-icons" style="font-size: 1rem; vertical-align: middle;">error_outline</span> ${violation.type}`;
       
       const violationTime = document.createElement('span');
       violationTime.className = 'violation-time';
       violationTime.textContent = violation.timestamp;
       
-      violationItem.appendChild(severityBadge);
+      violationHeader.appendChild(severityBadge);
+      violationHeader.appendChild(violationTime);
+      
+      const violationType = document.createElement('div');
+      violationType.className = 'violation-type';
+      violationType.innerHTML = `<span class="material-icons" style="font-size: 0.9rem;">error_outline</span> ${violation.type}`;
+      
+      violationItem.appendChild(violationHeader);
       violationItem.appendChild(violationType);
-      violationItem.appendChild(violationTime);
       
       violationsList.insertBefore(violationItem, violationsList.firstChild);
       
-      while (violationsList.children.length > 20) {
+      while (violationsList.children.length > 15) {
         violationsList.removeChild(violationsList.lastChild);
       }
     }
