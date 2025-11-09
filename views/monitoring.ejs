@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
   <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
@@ -22,20 +23,26 @@
           <span class="status-indicator" id="statusIndicator"></span>
           <span id="monitoringStatus">MONITORING READY</span>
         </h1>
-        <p class="monitoring-user">Operator: <span class="accent"><%= user.name %></span></p>
+        <p class="monitoring-user">
+          Operator: <span class="accent"><%= user.name %></span> • 
+          <span class="material-icons" style="vertical-align: middle; font-size: 1rem;">access_time</span>
+          <span id="sessionTime">00:00</span>
+        </p>
       </div>
 
       <!-- Control Buttons -->
       <div class="monitoring-controls">
         <button id="startBtn" class="btn-primary btn-large">
+          <span class="material-icons">play_arrow</span>
           START MONITORING
         </button>
         <button id="stopBtn" class="btn-danger btn-large" style="display: none;">
+          <span class="material-icons">stop</span>
           STOP MONITORING
         </button>
       </div>
 
-      <!-- Camera Feed Container -->
+      <!-- Camera Feed Container - CENTERED -->
       <div class="camera-container">
         <div class="camera-feed">
           <div class="camera-overlay">
@@ -43,7 +50,9 @@
           </div>
           <img id="cameraStream" class="camera-stream" alt="Camera Feed" style="display: none;">
           <div class="camera-placeholder" id="cameraPlaceholder">
-            <div class="camera-icon">◉</div>
+            <div class="camera-icon">
+              <span class="material-icons" style="font-size: 5rem; color: rgba(255,255,255,0.3);">videocam</span>
+            </div>
             <h2 class="camera-text">CAMERA FEED READY</h2>
             <p class="camera-subtext">Click "START MONITORING" to begin surveillance</p>
           </div>
@@ -53,28 +62,39 @@
       <!-- Live Stats Panel -->
       <div class="stats-panel">
         <div class="stat-card">
-          <div class="stat-icon">👁️</div>
+          <div class="stat-icon">
+            <span class="material-icons" style="font-size: 2.5rem; color: #00ffff;">visibility</span>
+          </div>
           <div class="stat-content">
             <span class="stat-label">Gaze Direction</span>
             <span class="stat-value" id="gazeStatus">—</span>
           </div>
         </div>
+        
         <div class="stat-card">
-          <div class="stat-icon">👤</div>
+          <div class="stat-icon">
+            <span class="material-icons" style="font-size: 2.5rem; color: #00ffff;">face</span>
+          </div>
           <div class="stat-content">
             <span class="stat-label">Faces Detected</span>
             <span class="stat-value" id="facesDetected">0</span>
           </div>
         </div>
+        
         <div class="stat-card">
-          <div class="stat-icon">👁️‍🗨️</div>
+          <div class="stat-icon">
+            <span class="material-icons" style="font-size: 2.5rem; color: #00ffff;">remove_red_eye</span>
+          </div>
           <div class="stat-content">
             <span class="stat-label">Total Blinks</span>
             <span class="stat-value" id="blinksCount">0</span>
           </div>
         </div>
+        
         <div class="stat-card">
-          <div class="stat-icon">⚠️</div>
+          <div class="stat-icon">
+            <span class="material-icons" style="font-size: 2.5rem; color: #ff4444;">warning</span>
+          </div>
           <div class="stat-content">
             <span class="stat-label">Violations</span>
             <span class="stat-value error-color" id="violationsCount">0</span>
@@ -84,7 +104,10 @@
 
       <!-- Risk Score Bar -->
       <div class="risk-panel">
-        <h3 class="risk-title">THREAT LEVEL ASSESSMENT</h3>
+        <h3 class="risk-title">
+          <span class="material-icons">security</span>
+          THREAT LEVEL ASSESSMENT
+        </h3>
         <div class="risk-bar-container">
           <div class="risk-bar" id="riskBar"></div>
         </div>
@@ -94,7 +117,7 @@
       <!-- Violations Log -->
       <div class="violations-panel">
         <h3 class="violations-title">
-          <span class="violations-icon">📋</span>
+          <span class="material-icons">assignment</span>
           VIOLATIONS LOG
         </h3>
         <div class="violations-list" id="violationsList">
@@ -105,12 +128,13 @@
       <!-- Download Report Section -->
       <div class="report-panel" id="reportPanel" style="display: none;">
         <h3 class="report-title">
-          <span class="report-icon">📄</span>
+          <span class="material-icons">description</span>
           SESSION REPORT GENERATED
         </h3>
         <div class="report-content">
           <p id="reportSummary">Session complete. Your monitoring report is ready for download.</p>
           <button id="downloadReportBtn" class="btn-primary btn-large">
+            <span class="material-icons">download</span>
             DOWNLOAD REPORT
           </button>
         </div>
@@ -126,6 +150,8 @@
     const userId = '<%= user._id %>';
     let isMonitoring = false;
     let currentReport = null;
+    let sessionStartTime = null;
+    let timerInterval = null;
 
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
@@ -135,6 +161,16 @@
     const monitoringStatus = document.getElementById('monitoringStatus');
     const scanLine = document.getElementById('scanLine');
     const reportPanel = document.getElementById('reportPanel');
+    const sessionTimeEl = document.getElementById('sessionTime');
+
+    function updateSessionTime() {
+      if (sessionStartTime) {
+        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        sessionTimeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    }
 
     startBtn.addEventListener('click', () => {
       startBtn.style.display = 'none';
@@ -145,6 +181,9 @@
       statusIndicator.classList.add('active');
       monitoringStatus.textContent = 'MONITORING ACTIVE';
       reportPanel.style.display = 'none';
+      
+      sessionStartTime = Date.now();
+      timerInterval = setInterval(updateSessionTime, 1000);
       
       isMonitoring = true;
       socket.emit('start-monitoring', { userId: userId });
@@ -217,6 +256,10 @@
       statusIndicator.classList.remove('active');
       monitoringStatus.textContent = 'MONITORING STOPPED';
       
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      
       cameraPlaceholder.querySelector('.camera-text').textContent = 'SESSION ENDED';
       cameraPlaceholder.querySelector('.camera-subtext').textContent = 'Check your report below';
     }
@@ -238,7 +281,7 @@
       
       const violationType = document.createElement('span');
       violationType.className = 'violation-type';
-      violationType.textContent = violation.type;
+      violationType.innerHTML = `<span class="material-icons" style="font-size: 1rem; vertical-align: middle;">error_outline</span> ${violation.type}`;
       
       const violationTime = document.createElement('span');
       violationTime.className = 'violation-time';
@@ -259,7 +302,7 @@
       const alert = document.createElement('div');
       alert.className = 'floating-alert severity-' + violation.severity.toLowerCase();
       alert.innerHTML = `
-        <span class="alert-icon">⚠️</span>
+        <span class="material-icons">warning</span>
         <span class="alert-text">${violation.type}</span>
       `;
       
