@@ -9,7 +9,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: 3.12.0
       - key: MONGO_URI
         sync: false
       - key: SESSION_SECRET
