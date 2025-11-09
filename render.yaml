@@ -10,6 +10,14 @@ services:
         value: production
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: MONGO_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
     disk:
       name: vigilcam-disk
       mountPath: /opt/render/project/src/reports
