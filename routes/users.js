@@ -82,6 +82,27 @@ router.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
+// Google OAuth Routes
+// Initiate Google OAuth
+router.get('/auth/google',
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'] 
+  })
+);
+
+// Google OAuth callback
+router.get('/auth/google/callback',
+  passport.authenticate('google', { 
+    failureRedirect: '/login',
+    failureFlash: true 
+  }),
+  (req, res) => {
+    // Successful authentication
+    req.flash('success_msg', 'Successfully signed in with Google');
+    res.redirect('/monitoring');
+  }
+);
+
 // Logout handler
 router.get('/logout', (req, res) => {
   req.logout((err) => {
