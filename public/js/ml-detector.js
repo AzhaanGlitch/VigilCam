@@ -70,15 +70,10 @@ class MLDetector {
   }
 
   async loadMediaPipe() {
-    // Load MediaPipe FaceMesh from CDN
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js';
-    document.head.appendChild(script);
-
-    await new Promise((resolve, reject) => {
-      script.onload = resolve;
-      script.onerror = reject;
-    });
+    // Wait for MediaPipe to be loaded from HTML script tags
+    if (typeof FaceMesh === 'undefined') {
+      throw new Error('MediaPipe FaceMesh not loaded. Check CDN scripts in HTML.');
+    }
 
     // Initialize FaceMesh
     this.faceMesh = new FaceMesh({
@@ -95,6 +90,8 @@ class MLDetector {
     });
 
     this.faceMesh.onResults((results) => this.processFaceMesh(results));
+    
+    console.log('MediaPipe FaceMesh initialized');
   }
 
   async setupCamera() {
