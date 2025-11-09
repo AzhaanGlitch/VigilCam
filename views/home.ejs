@@ -6,6 +6,7 @@
   <title><%= title %></title>
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
 </head>
 <body>
   <!-- Background Image (right side) -->
@@ -33,13 +34,27 @@
         </p>
         
         <div class="hero-buttons">
-          <a href="/login" class="btn-primary btn-large">
-            Sign in
-          </a>
-          <a href="/monitoring" class="btn-secondary btn-large">
-            Monitor
-          </a>
-        </div>
+          <% if (typeof user !== 'undefined' && user) { %>
+            <!-- Logged in: Show only Monitor button -->
+            <a href="/monitoring" class="btn-primary btn-large">
+              <span class="material-icons">videocam</span>
+              Start Monitoring
+            </a>
+            <a href="/about" class="btn-secondary btn-large">
+              <span class="material-icons">info</span>
+              Learn More
+            </a>
+          <% } else { %>
+            <!-- Not logged in: Show Sign in and Monitor -->
+            <a href="/login" class="btn-primary btn-large">
+              <span class="material-icons">login</span>
+              Sign in
+            </a>
+            <a href="/register" class="btn-secondary btn-large">
+              <span class="material-icons">person_add</span>
+              Register Now
+            </a>
+          <% } %>
         </div>
       </div>
     </section>
