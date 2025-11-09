@@ -7,14 +7,17 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+  <!-- Background Image -->
+  <div class="background-image"></div>
+  
   <%- include('partials/navbar') %>
   
   <main class="main-content">
     <div class="auth-container">
       <div class="auth-box">
         <div class="auth-header">
-          <h2 class="auth-title">ACCESS CONTROL</h2>
-          <p class="auth-subtitle">Enter Credentials to Continue</p>
+          <h2 class="auth-title">Welcome Back</h2>
+          <p class="auth-subtitle">Sign in to your account to continue</p>
         </div>
 
         <%- include('partials/messages') %>
@@ -39,19 +42,18 @@
               id="password" 
               name="password" 
               class="form-input"
-              placeholder="••••••••"
+              placeholder="Enter your password"
               required
             >
           </div>
           
-          <button type="submit" class="btn-primary btn-block">
-            <span class="btn-icon">→</span>
-            AUTHENTICATE
+          <button type="submit" class="btn-primary btn-block btn-large">
+            Sign In
           </button>
         </form>
         
         <div class="auth-footer">
-          <p>No account yet? <a href="/register" class="auth-link">Register Here</a></p>
+          <p>Don't have an account? <a href="/register" class="auth-link">Create one now</a></p>
         </div>
       </div>
     </div>
