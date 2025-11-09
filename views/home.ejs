@@ -7,103 +7,38 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+  <!-- Background Image (right side) -->
+  <div class="background-image"></div>
+  
   <%- include('partials/navbar') %>
   
   <main class="main-content">
     <%- include('partials/messages') %>
     
-    <!-- Hero Section -->
+    <!-- Hero Section - Left Aligned -->
     <section class="hero">
       <div class="hero-content">
+        <div class="hero-badge">
+          We Got Eyes Everywhere!
+        </div>
+        
         <h1 class="hero-title">
-          ALWAYS ON WATCH.<br>
-          <span class="accent">ZERO BLIND SPOTS.</span>
+          Real-time motion detection<br>
+          meets unbreakable security
         </h1>
+        
         <p class="hero-description">
-          Advanced AI-powered surveillance and exam proctoring system. 
-          Real-time monitoring with intelligent threat detection.
+          VigilCam delivers seamless, Proctoring with live camera feeds and motion analysis, ensuring exam integrity without compromise.
         </p>
-      </div>
-    </section>
-
-    <!-- Main CTA Section -->
-    <section class="cta-section">
-      <div class="cta-container">
-        <div class="cta-header">
-          <h2 class="cta-title">Start Live Monitoring</h2>
-        </div>
         
-        <div class="cta-content">
-          <a href="/monitoring" class="btn-primary">
-            <span class="btn-icon">◉</span>
-            ACTIVATE VIGILANCE
+        <div class="hero-buttons">
+          <a href="/login" class="btn-primary btn-large">
+            Sign in
           </a>
-          <p class="cta-note">
-            <span class="lock-icon">🔒</span>
-            Login Required for Live Feed
-          </p>
+          <a href="/monitoring" class="btn-secondary btn-large">
+            Monitor
+          </a>
         </div>
-      </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="features-section">
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🎯</div>
-          <h3 class="feature-title">AI Precision</h3>
-          <p class="feature-description">
-            Machine learning algorithms detect suspicious behavior with 99% accuracy
-          </p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">🔐</div>
-          <h3 class="feature-title">Secure Cloud Storage</h3>
-          <p class="feature-description">
-            End-to-end encrypted recordings stored in military-grade infrastructure
-          </p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">⚡</div>
-          <h3 class="feature-title">Real-Time Alerts</h3>
-          <p class="feature-description">
-            Instant notifications for any detected anomalies or violations
-          </p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3 class="feature-title">Detailed Reports</h3>
-          <p class="feature-description">
-            Comprehensive analytics and violation logs with timestamps
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Technical Specs -->
-    <section class="specs-section">
-      <div class="specs-container">
-        <h2 class="specs-title">TECHNICAL CAPABILITIES</h2>
-        <div class="specs-grid">
-          <div class="spec-item">
-            <span class="spec-label">Detection Types:</span>
-            <span class="spec-value">Gaze Tracking, Face Recognition, Audio Analysis</span>
-          </div>
-          <div class="spec-item">
-            <span class="spec-label">Processing Speed:</span>
-            <span class="spec-value">30 FPS Real-Time Analysis</span>
-          </div>
-          <div class="spec-item">
-            <span class="spec-label">Multi-Face Detection:</span>
-            <span class="spec-value">Up to 3 Simultaneous Subjects</span>
-          </div>
-          <div class="spec-item">
-            <span class="spec-label">Response Time:</span>
-            <span class="spec-value">&lt; 200ms Alert Generation</span>
-          </div>
         </div>
       </div>
     </section>
