@@ -1,6 +1,15 @@
 const express = require('express');
 const router = express.Router();
 
+// Health check endpoint for Render
+router.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    service: 'VigilCam'
+  });
+});
+
 // Home page
 router.get('/', (req, res) => {
   res.render('home', {
