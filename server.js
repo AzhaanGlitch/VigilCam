@@ -42,7 +42,10 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 // 24 hours
+    maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true,
+    sameSite: 'lax'
   }
 });
 
