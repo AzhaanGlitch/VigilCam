@@ -226,7 +226,7 @@ body {
 }
 
 .hero-description {
-  font-size: 1.25rem;
+  font-size: 1.20rem;
   color: var(--text-secondary);
   line-height: 1.7;
   margin-bottom: 3rem;
@@ -1006,7 +1006,7 @@ body {
 
 .footer-content p {
   color: var(--text-muted);
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.1rem;
   font-size: 0.9rem;
 }
 
