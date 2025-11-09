@@ -10,17 +10,18 @@
     </div>
     
     <ul class="nav-menu">
-      <% if (typeof user !== 'undefined' && user) { %>
-        <li><a href="/" class="nav-link">Dashboard</a></li>
-        <li><a href="/monitoring" class="nav-link">Monitoring</a></li>
-        <li><a href="/about" class="nav-link">About Us</a></li>
-        <li><a href="/contact" class="nav-link">Contact</a></li>
-        <li><span class="nav-user">
-          <span class="material-icons">account_circle</span>
-          <%= user.name %>
-        </span></li>
-        <li><a href="/users/logout" class="nav-link nav-logout">Sign out</a></li>
-      <% } else { %>
+    <% if (typeof user !== 'undefined' && user) { %>
+      <li><a href="/" class="nav-link">Dashboard</a></li>
+      <li><a href="/monitoring" class="nav-link">Monitoring</a></li>
+      <li><a href="/history" class="nav-link">History</a></li>
+      <li><a href="/about" class="nav-link">About Us</a></li>
+      <li><a href="/contact" class="nav-link">Contact</a></li>
+      <li><span class="nav-user">
+        <span class="material-icons">account_circle</span>
+        <%= user.name %>
+      </span></li>
+      <li><a href="/users/logout" class="nav-link nav-logout">Sign out</a></li>
+    <% } else { %>
         <li><a href="/" class="nav-link">Dashboard</a></li>
         <li><a href="/about" class="nav-link">About Us</a></li>
         <li><a href="/contact" class="nav-link">Contact</a></li>
