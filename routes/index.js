@@ -8,6 +8,20 @@ router.get('/', (req, res) => {
   });
 });
 
+// About Us page
+router.get('/about', (req, res) => {
+  res.render('about', {
+    title: 'About Us - VigilCam'
+  });
+});
+
+// Contact page (placeholder)
+router.get('/contact', (req, res) => {
+  res.render('contact', {
+    title: 'Contact Us - VigilCam'
+  });
+});
+
 // Login page
 router.get('/login', (req, res) => {
   if (req.isAuthenticated()) {
