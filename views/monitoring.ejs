@@ -8,6 +8,9 @@
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+  <!-- Background Image -->
+  <div class="background-image"></div>
+  
   <%- include('partials/navbar') %>
   
   <main class="main-content">
@@ -25,11 +28,9 @@
       <!-- Control Buttons -->
       <div class="monitoring-controls">
         <button id="startBtn" class="btn-primary btn-large">
-          <span class="btn-icon">▶</span>
           START MONITORING
         </button>
         <button id="stopBtn" class="btn-danger btn-large" style="display: none;">
-          <span class="btn-icon">■</span>
           STOP MONITORING
         </button>
       </div>
@@ -44,7 +45,7 @@
           <div class="camera-placeholder" id="cameraPlaceholder">
             <div class="camera-icon">◉</div>
             <h2 class="camera-text">CAMERA FEED READY</h2>
-            <p class="camera-subtext">Click "START MONITORING" to begin</p>
+            <p class="camera-subtext">Click "START MONITORING" to begin surveillance</p>
           </div>
         </div>
       </div>
@@ -55,21 +56,21 @@
           <div class="stat-icon">👁️</div>
           <div class="stat-content">
             <span class="stat-label">Gaze Direction</span>
-            <span class="stat-value accent" id="gazeStatus">-</span>
+            <span class="stat-value" id="gazeStatus">—</span>
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">👤</div>
           <div class="stat-content">
             <span class="stat-label">Faces Detected</span>
-            <span class="stat-value accent" id="facesDetected">0</span>
+            <span class="stat-value" id="facesDetected">0</span>
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">👁️‍🗨️</div>
           <div class="stat-content">
             <span class="stat-label">Total Blinks</span>
-            <span class="stat-value accent" id="blinksCount">0</span>
+            <span class="stat-value" id="blinksCount">0</span>
           </div>
         </div>
         <div class="stat-card">
@@ -83,7 +84,7 @@
 
       <!-- Risk Score Bar -->
       <div class="risk-panel">
-        <h3 class="risk-title">RISK SCORE</h3>
+        <h3 class="risk-title">THREAT LEVEL ASSESSMENT</h3>
         <div class="risk-bar-container">
           <div class="risk-bar" id="riskBar"></div>
         </div>
@@ -105,12 +106,11 @@
       <div class="report-panel" id="reportPanel" style="display: none;">
         <h3 class="report-title">
           <span class="report-icon">📄</span>
-          SESSION REPORT READY
+          SESSION REPORT GENERATED
         </h3>
         <div class="report-content">
           <p id="reportSummary">Session complete. Your monitoring report is ready for download.</p>
-          <button id="downloadReportBtn" class="btn-primary">
-            <span class="btn-icon">⬇</span>
+          <button id="downloadReportBtn" class="btn-primary btn-large">
             DOWNLOAD REPORT
           </button>
         </div>
@@ -136,7 +136,6 @@
     const scanLine = document.getElementById('scanLine');
     const reportPanel = document.getElementById('reportPanel');
 
-    // Start monitoring
     startBtn.addEventListener('click', () => {
       startBtn.style.display = 'none';
       stopBtn.style.display = 'inline-flex';
@@ -151,7 +150,6 @@
       socket.emit('start-monitoring', { userId: userId });
     });
 
-    // Stop monitoring
     stopBtn.addEventListener('click', () => {
       if (confirm('Are you sure you want to stop monitoring? The session report will be generated.')) {
         stopBtn.disabled = true;
@@ -159,61 +157,50 @@
       }
     });
 
-    // Receive video frames
     socket.on('detection-data', (data) => {
       if (data.type === 'frame' && data.frame) {
         cameraStream.src = 'data:image/jpeg;base64,' + data.frame;
         
-        // Update stats
         if (data.stats) {
-          document.getElementById('gazeStatus').textContent = data.stats.gaze || '-';
+          document.getElementById('gazeStatus').textContent = data.stats.gaze || '—';
           document.getElementById('facesDetected').textContent = data.stats.num_faces || 0;
           document.getElementById('blinksCount').textContent = data.stats.blinks || 0;
           document.getElementById('violationsCount').textContent = data.stats.violations || 0;
           
-          // Update risk score
           const riskScore = data.stats.risk_score || 0;
           document.getElementById('riskValue').textContent = riskScore;
           const riskBar = document.getElementById('riskBar');
           riskBar.style.width = Math.min(riskScore, 100) + '%';
           
-          // Color code risk bar
           if (riskScore < 25) {
-            riskBar.style.backgroundColor = '#00ff88';
+            riskBar.style.background = '#00ff00';
           } else if (riskScore < 50) {
-            riskBar.style.backgroundColor = '#ffaa00';
+            riskBar.style.background = '#ffaa00';
           } else {
-            riskBar.style.backgroundColor = '#ff3366';
+            riskBar.style.background = '#ff4444';
           }
         }
       }
       
-      // Handle violations
       if (data.type === 'violation' && data.data) {
         addViolationToLog(data.data);
-        
-        // Show visual alert
         showViolationAlert(data.data);
       }
       
-      // Handle status messages
       if (data.type === 'status') {
         monitoringStatus.textContent = data.message.toUpperCase();
       }
       
-      // Handle final report
       if (data.type === 'report') {
         currentReport = data.data;
         showReportPanel(data.data);
       }
     });
 
-    // Handle monitoring stopped
     socket.on('monitoring-stopped', () => {
       stopMonitoring();
     });
 
-    // Handle errors
     socket.on('error', (error) => {
       alert('Error: ' + error.message);
       stopMonitoring();
@@ -237,7 +224,6 @@
     function addViolationToLog(violation) {
       const violationsList = document.getElementById('violationsList');
       
-      // Remove "no violations" message
       const noViolations = violationsList.querySelector('.no-violations');
       if (noViolations) {
         noViolations.remove();
@@ -264,14 +250,12 @@
       
       violationsList.insertBefore(violationItem, violationsList.firstChild);
       
-      // Keep only last 20 violations visible
       while (violationsList.children.length > 20) {
         violationsList.removeChild(violationsList.lastChild);
       }
     }
 
     function showViolationAlert(violation) {
-      // Create floating alert
       const alert = document.createElement('div');
       alert.className = 'floating-alert severity-' + violation.severity.toLowerCase();
       alert.innerHTML = `
@@ -281,11 +265,10 @@
       
       document.body.appendChild(alert);
       
-      // Animate and remove
       setTimeout(() => {
-        alert.style.animation = 'slideOut 0.3s ease-out';
+        alert.style.opacity = '0';
         setTimeout(() => alert.remove(), 300);
-      }, 3000);
+      }, 3500);
     }
 
     function showReportPanel(report) {
@@ -297,12 +280,11 @@
       document.getElementById('reportSummary').innerHTML = `
         <strong>Duration:</strong> ${duration} minutes<br>
         <strong>Total Violations:</strong> ${report.total_violations}<br>
-        <strong>Risk Level:</strong> <span class="risk-${riskLevel.toLowerCase()}">${riskLevel}</span><br>
+        <strong>Risk Level:</strong> ${riskLevel}<br>
         <strong>Total Blinks:</strong> ${report.total_blinks}
       `;
     }
 
-    // Download report
     document.getElementById('downloadReportBtn').addEventListener('click', () => {
       if (currentReport) {
         const dataStr = JSON.stringify(currentReport, null, 2);
@@ -318,7 +300,6 @@
       }
     });
 
-    // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
       if (isMonitoring) {
         socket.emit('stop-monitoring');
