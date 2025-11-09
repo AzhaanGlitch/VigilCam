@@ -7,6 +7,229 @@
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* Enhanced monitoring layout styles - FIXED ALIGNMENT */
+    .monitoring-layout {
+      display: grid;
+      grid-template-columns: minmax(600px, 2fr) 420px;
+      gap: 2rem;
+      margin: 2rem 0;
+      align-items: start;
+      max-width: 1600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .camera-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .camera-container {
+      width: 100%;
+    }
+
+    .camera-feed {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      aspect-ratio: 16/9;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .stats-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    .stats-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .stat-icon {
+      font-size: 2rem;
+      opacity: 0.8;
+      min-width: 32px;
+    }
+
+    .stat-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .violations-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-height: 450px;
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    .violations-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .violations-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .camera-risk-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+    }
+
+    .risk-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    /* Report Panel Styles */
+    .report-panel-inline {
+      background: rgba(0, 255, 0, 0.1);
+      border: 2px solid var(--success-color);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      max-width: 1600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .report-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .report-header h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--success-color);
+      margin: 0;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .report-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .report-stat-label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .report-stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .report-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1200px) {
+      .monitoring-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-section {
+        position: relative;
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .monitoring-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .stat-card {
+        padding: 1rem;
+      }
+
+      .camera-feed {
+        aspect-ratio: 4/3;
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- Background Image -->
@@ -42,7 +265,7 @@
         </button>
       </div>
 
-      <!-- SPLIT SCREEN LAYOUT: Camera Left, Stats Right -->
+      <!-- FIXED LAYOUT: Camera Left, Stats Right -->
       <div class="monitoring-layout">
         
         <!-- LEFT SIDE: Camera Section -->
@@ -76,14 +299,14 @@
           </div>
         </div>
 
-        <!-- RIGHT SIDE: Stats & Violations -->
+        <!-- RIGHT SIDE: Stats & Violations (Sticky) -->
         <div class="stats-section">
           
           <!-- Live Stats Panel -->
           <div class="stats-panel">
             <div class="stat-card">
               <div class="stat-icon">
-                <span class="material-icons" style="font-size: 2.25rem; color: #00ffff;">visibility</span>
+                <span class="material-icons" style="color: #00ffff;">visibility</span>
               </div>
               <div class="stat-content">
                 <span class="stat-label">Gaze Direction</span>
@@ -93,7 +316,7 @@
             
             <div class="stat-card">
               <div class="stat-icon">
-                <span class="material-icons" style="font-size: 2.25rem; color: #00ffff;">face</span>
+                <span class="material-icons" style="color: #00ffff;">face</span>
               </div>
               <div class="stat-content">
                 <span class="stat-label">Faces Detected</span>
@@ -103,7 +326,7 @@
             
             <div class="stat-card">
               <div class="stat-icon">
-                <span class="material-icons" style="font-size: 2.25rem; color: #00ffff;">remove_red_eye</span>
+                <span class="material-icons" style="color: #00ffff;">remove_red_eye</span>
               </div>
               <div class="stat-content">
                 <span class="stat-label">Total Blinks</span>
@@ -113,7 +336,7 @@
             
             <div class="stat-card">
               <div class="stat-icon">
-                <span class="material-icons" style="font-size: 2.25rem; color: #ff4444;">warning</span>
+                <span class="material-icons" style="color: #ff4444;">warning</span>
               </div>
               <div class="stat-content">
                 <span class="stat-label">Violations</span>
@@ -136,17 +359,25 @@
         </div>
       </div>
 
-      <!-- Download Report Section - Full Width Below -->
-      <div class="report-panel" id="reportPanel" style="display: none;">
-        <h3 class="report-title">
-          <span class="material-icons">description</span>
-          SESSION REPORT GENERATED
-        </h3>
-        <div class="report-content">
-          <p id="reportSummary">Session complete. Your monitoring report is ready for download.</p>
+      <!-- IN-PAGE REPORT DISPLAY -->
+      <div class="report-panel-inline" id="reportPanel" style="display: none;">
+        <div class="report-header">
+          <span class="material-icons" style="font-size: 2rem; color: var(--success-color);">description</span>
+          <h3>SESSION REPORT GENERATED</h3>
+        </div>
+        
+        <div class="report-grid" id="reportGrid">
+          <!-- Stats will be dynamically inserted here -->
+        </div>
+
+        <div class="report-actions">
           <button id="downloadReportBtn" class="btn-primary btn-large">
             <span class="material-icons">download</span>
-            DOWNLOAD REPORT
+            DOWNLOAD JSON REPORT
+          </button>
+          <button id="newSessionBtn" class="btn-secondary btn-large">
+            <span class="material-icons">refresh</span>
+            START NEW SESSION
           </button>
         </div>
       </div>
@@ -192,6 +423,15 @@
       statusIndicator.classList.add('active');
       monitoringStatus.textContent = 'MONITORING ACTIVE';
       reportPanel.style.display = 'none';
+      
+      // Reset stats
+      document.getElementById('gazeStatus').textContent = '—';
+      document.getElementById('facesDetected').textContent = '0';
+      document.getElementById('blinksCount').textContent = '0';
+      document.getElementById('violationsCount').textContent = '0';
+      document.getElementById('riskValue').textContent = '0';
+      document.getElementById('riskBar').style.width = '0%';
+      document.getElementById('violationsList').innerHTML = '<p class="no-violations">No violations detected yet</p>';
       
       sessionStartTime = Date.now();
       timerInterval = setInterval(updateSessionTime, 1000);
@@ -243,7 +483,7 @@
       
       if (data.type === 'report') {
         currentReport = data.data;
-        showReportPanel(data.data);
+        showInlineReport(data.data);
       }
     });
 
@@ -284,28 +524,35 @@
       }
       
       const violationItem = document.createElement('div');
-      violationItem.className = 'violation-item severity-' + violation.severity.toLowerCase();
+      violationItem.style.cssText = `
+        background: rgba(255, 255, 255, 0.05);
+        border-left: 4px solid;
+        border-radius: 8px;
+        padding: 0.8rem;
+        margin-bottom: 0.5rem;
+        animation: slideIn 0.3s ease;
+      `;
       
-      const violationHeader = document.createElement('div');
-      violationHeader.className = 'violation-header';
+      if (violation.severity === 'HIGH') {
+        violationItem.style.borderColor = '#ff4444';
+      } else if (violation.severity === 'MEDIUM') {
+        violationItem.style.borderColor = '#ffaa00';
+      } else {
+        violationItem.style.borderColor = '#00aaff';
+      }
       
-      const severityBadge = document.createElement('span');
-      severityBadge.className = 'severity-badge';
-      severityBadge.textContent = violation.severity;
-      
-      const violationTime = document.createElement('span');
-      violationTime.className = 'violation-time';
-      violationTime.textContent = violation.timestamp;
-      
-      violationHeader.appendChild(severityBadge);
-      violationHeader.appendChild(violationTime);
-      
-      const violationType = document.createElement('div');
-      violationType.className = 'violation-type';
-      violationType.innerHTML = `<span class="material-icons" style="font-size: 0.9rem;">error_outline</span> ${violation.type}`;
-      
-      violationItem.appendChild(violationHeader);
-      violationItem.appendChild(violationType);
+      violationItem.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-icons" style="font-size: 0.9rem;">error_outline</span>
+            <strong>${violation.type}</strong>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span style="padding: 0.2rem 0.5rem; background: ${violation.severity === 'HIGH' ? '#ff4444' : violation.severity === 'MEDIUM' ? '#ffaa00' : '#00aaff'}; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${violation.severity}</span>
+            <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">${violation.timestamp.split(' ')[1]}</span>
+          </div>
+        </div>
+      `;
       
       violationsList.insertBefore(violationItem, violationsList.firstChild);
       
@@ -330,18 +577,59 @@
       }, 3500);
     }
 
-    function showReportPanel(report) {
-      reportPanel.style.display = 'block';
+    function showInlineReport(report) {
+      const reportGrid = document.getElementById('reportGrid');
       
-      const duration = Math.floor(report.duration_seconds / 60);
+      const durationMinutes = Math.floor(report.duration_seconds / 60);
+      const durationSeconds = Math.floor(report.duration_seconds % 60);
       const riskLevel = report.risk_score < 25 ? 'LOW' : report.risk_score < 50 ? 'MODERATE' : 'HIGH';
+      const riskColor = report.risk_score < 25 ? '#00ff00' : report.risk_score < 50 ? '#ffaa00' : '#ff4444';
       
-      document.getElementById('reportSummary').innerHTML = `
-        <strong>Duration:</strong> ${duration} minutes<br>
-        <strong>Total Violations:</strong> ${report.total_violations}<br>
-        <strong>Risk Level:</strong> ${riskLevel}<br>
-        <strong>Total Blinks:</strong> ${report.total_blinks}
+      reportGrid.innerHTML = `
+        <div class="report-stat">
+          <div class="report-stat-label">Session Duration</div>
+          <div class="report-stat-value">${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}</div>
+        </div>
+        <div class="report-stat">
+          <div class="report-stat-label">Total Violations</div>
+          <div class="report-stat-value" style="color: #ff4444;">${report.total_violations}</div>
+        </div>
+        <div class="report-stat">
+          <div class="report-stat-label">Risk Level</div>
+          <div class="report-stat-value" style="color: ${riskColor};">${riskLevel}</div>
+        </div>
+        <div class="report-stat">
+          <div class="report-stat-label">Risk Score</div>
+          <div class="report-stat-value">${report.risk_score}</div>
+        </div>
+        <div class="report-stat">
+          <div class="report-stat-label">Total Blinks</div>
+          <div class="report-stat-value">${report.total_blinks}</div>
+        </div>
+        <div class="report-stat">
+          <div class="report-stat-label">Gaze Away Count</div>
+          <div class="report-stat-value">${report.gaze_away_count}</div>
+        </div>
+        <div class="report-stat">
+          <div class="report-stat-label">No Face Detected</div>
+          <div class="report-stat-value">${report.no_face_count}</div>
+        </div>
+        <div class="report-stat">
+          <div class="report-stat-label">Multiple Faces</div>
+          <div class="report-stat-value">${report.multiple_faces_count}</div>
+        </div>
+        <div class="report-stat">
+          <div class="report-stat-label">Talking Detected</div>
+          <div class="report-stat-value">${report.talking_count}</div>
+        </div>
+        <div class="report-stat">
+          <div class="report-stat-label">Eyes Closed</div>
+          <div class="report-stat-value">${report.eyes_closed_count}</div>
+        </div>
       `;
+      
+      reportPanel.style.display = 'block';
+      reportPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     document.getElementById('downloadReportBtn').addEventListener('click', () => {
@@ -357,6 +645,10 @@
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }
+    });
+
+    document.getElementById('newSessionBtn').addEventListener('click', () => {
+      location.reload();
     });
 
     window.addEventListener('beforeunload', () => {
