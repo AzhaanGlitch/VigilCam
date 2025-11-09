@@ -1,9 +1,9 @@
 services:
   - type: web
     name: vigilcam
-    runtime: python
+    runtime: node
     plan: free
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && npm install
+    buildCommand: pip3 install --upgrade pip && pip3 install -r requirements.txt && npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -18,7 +18,3 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
-    disk:
-      name: vigilcam-disk
-      mountPath: /opt/render/project/src/reports
-      sizeGB: 1
