@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
+  googleId: {
+    type: String,
+    sparse: true,
+    unique: true
+  },
   name: {
     type: String,
     required: true,
@@ -15,7 +20,14 @@ const UserSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true
+    required: function() {
+      // Password is only required if there's no Google ID
+      return !this.googleId;
+    }
+  },
+  picture: {
+    type: String,
+    default: null
   },
   role: {
     type: String,
