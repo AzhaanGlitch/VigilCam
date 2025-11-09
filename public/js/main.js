@@ -25,20 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Monitoring page - simulate live stats (for demonstration)
-  if (window.location.pathname === '/monitoring') {
-    const statusDots = document.querySelectorAll('.status-dot');
-    
-    // Add blinking effect to active status dots
-    statusDots.forEach(dot => {
-      if (dot.classList.contains('active')) {
-        setInterval(() => {
-          dot.style.opacity = dot.style.opacity === '0.5' ? '1' : '0.5';
-        }, 1000);
-      }
-    });
-  }
-
   // Form validation enhancement
   const forms = document.querySelectorAll('form');
   forms.forEach(form => {
@@ -47,31 +33,34 @@ document.addEventListener('DOMContentLoaded', function() {
       if (button) {
         button.disabled = true;
         button.style.opacity = '0.6';
-        button.innerHTML = '<span class="btn-icon">⟳</span> PROCESSING...';
+        const originalText = button.textContent;
+        button.textContent = 'Processing...';
         
         // Re-enable after 3 seconds in case of error
         setTimeout(() => {
           button.disabled = false;
           button.style.opacity = '1';
+          button.textContent = originalText;
         }, 3000);
       }
     });
   });
 
-  // Password visibility toggle (if needed in future)
-  const passwordInputs = document.querySelectorAll('input[type="password"]');
-  passwordInputs.forEach(input => {
+  // Input focus effects
+  const inputs = document.querySelectorAll('.form-input');
+  inputs.forEach(input => {
     input.addEventListener('focus', function() {
-      this.style.borderColor = 'var(--accent-color)';
+      this.style.transform = 'scale(1.01)';
+      this.style.transition = 'transform 0.2s ease';
     });
     
     input.addEventListener('blur', function() {
-      this.style.borderColor = 'var(--border-color)';
+      this.style.transform = 'scale(1)';
     });
   });
 
   // Console security message
-  console.log('%cVigilCam Security System', 'color: #00ffff; font-size: 20px; font-weight: bold;');
-  console.log('%cALWAYS ON WATCH. ZERO BLIND SPOTS.', 'color: #00ffff; font-size: 14px;');
-  console.log('%cUnauthorized access is monitored and logged.', 'color: #ff3366; font-size: 12px;');
+  console.log('%cVigilCam Security System', 'color: #ffffff; font-size: 20px; font-weight: bold;');
+  console.log('%cALWAYS ON WATCH. ZERO BLIND SPOTS.', 'color: #ffffff; font-size: 14px;');
+  console.log('%cUnauthorized access is monitored and logged.', 'color: #ff4444; font-size: 12px;');
 });
