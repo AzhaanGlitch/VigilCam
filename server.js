@@ -9,6 +9,7 @@ require('dotenv').config();
 
 // Import database configuration
 const connectDB = require('./config/db');
+const Report = require('./models/Report');
 
 // Import Passport configuration
 require('./config/passport')(passport);
@@ -72,18 +73,18 @@ app.use((req, res, next) => {
 app.use('/', require('./routes/index'));
 app.use('/users', require('./routes/users'));
 app.use('/monitoring', require('./routes/monitoring'));
+app.use('/history', require('./routes/history'));
 
 // Socket.IO connection handling
 const { PythonShell } = require('python-shell');
 const fs = require('fs');
 
-let activeSessions = new Map(); // Store active monitoring sessions
+let activeSessions = new Map();
 
 // Function to find Python executable
 function getPythonCommand() {
   const { execSync } = require('child_process');
   
-  // Try different Python commands
   const commands = ['python', 'python3', 'py'];
   
   for (const cmd of commands) {
@@ -94,12 +95,10 @@ function getPythonCommand() {
         return cmd;
       }
     } catch (err) {
-      // Command not found, try next
       continue;
     }
   }
   
-  // If none found, return 'python3' as default
   console.warn('Warning: Could not detect Python installation. Using default "python3"');
   return 'python3';
 }
@@ -125,22 +124,54 @@ io.on('connection', (socket) => {
     try {
       pyshell = new PythonShell('vigilcam_stream.py', options);
       
-      // Store the session
       activeSessions.set(socket.id, {
         pyshell: pyshell,
         userId: data.userId,
         startTime: Date.now()
       });
 
-      pyshell.on('message', (message) => {
-        console.log('Python message type:', message.type); // Debug log
+      pyshell.on('message', async (message) => {
+        console.log('Python message type:', message.type);
         
-        // Emit all detection data to client
         socket.emit('detection-data', message);
         
-        // Special handling for report
         if (message.type === 'report') {
-          console.log('Report generated, sending to client');
+          console.log('Report received, saving to database');
+          
+          try {
+            // Save report to database
+            const reportData = message.data;
+            const newReport = new Report({
+              userId: data.userId,
+              filename: reportData.filename,
+              timestamp: reportData.timestamp,
+              date: reportData.date,
+              duration_seconds: reportData.duration_seconds,
+              total_violations: reportData.total_violations,
+              risk_score: reportData.risk_score,
+              total_blinks: reportData.total_blinks,
+              excessive_blink_count: reportData.excessive_blink_count,
+              gaze_away_count: reportData.gaze_away_count,
+              no_face_count: reportData.no_face_count,
+              multiple_faces_count: reportData.multiple_faces_count,
+              talking_count: reportData.talking_count,
+              eyes_closed_count: reportData.eyes_closed_count,
+              violations: reportData.violations
+            });
+            
+            await newReport.save();
+            console.log('Report saved to database successfully');
+            
+            // Send confirmation with database ID
+            socket.emit('report-saved', { 
+              reportId: newReport._id,
+              filename: reportData.filename 
+            });
+            
+          } catch (err) {
+            console.error('Error saving report to database:', err);
+            socket.emit('error', { message: 'Failed to save report to database' });
+          }
         }
       });
 
@@ -154,7 +185,6 @@ io.on('connection', (socket) => {
       pyshell.on('close', (code) => {
         console.log('Python script closed with code:', code);
         
-        // Clean up session
         if (activeSessions.has(socket.id)) {
           activeSessions.delete(socket.id);
         }
@@ -174,19 +204,20 @@ io.on('connection', (socket) => {
     
     if (session && session.pyshell) {
       try {
-        // Send SIGTERM to Python process to trigger graceful shutdown
-        session.pyshell.childProcess.stdin.write('\n');
-        session.pyshell.childProcess.kill('SIGTERM');
+        // Send SIGTERM to trigger graceful shutdown
+        if (session.pyshell.childProcess) {
+          session.pyshell.childProcess.kill('SIGTERM');
+        }
         
         console.log('Sent termination signal to Python process');
         
-        // Wait a bit for Python to send the report
+        // Wait for Python to send report
         setTimeout(() => {
           if (session.pyshell && session.pyshell.childProcess) {
             session.pyshell.childProcess.kill('SIGKILL');
           }
           activeSessions.delete(socket.id);
-        }, 3000); // Wait 3 seconds for graceful shutdown
+        }, 5000); // Wait 5 seconds for graceful shutdown
         
       } catch (err) {
         console.error('Error stopping Python process:', err);
@@ -201,7 +232,9 @@ io.on('connection', (socket) => {
     
     if (session && session.pyshell) {
       try {
-        session.pyshell.childProcess.kill('SIGTERM');
+        if (session.pyshell.childProcess) {
+          session.pyshell.childProcess.kill('SIGTERM');
+        }
         setTimeout(() => {
           if (session.pyshell && session.pyshell.childProcess) {
             session.pyshell.childProcess.kill('SIGKILL');
