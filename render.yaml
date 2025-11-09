@@ -2,15 +2,14 @@ services:
   - type: web
     name: vigilcam
     runtime: python
-    buildCommand: |
-      pip install -r requirements.txt
-      npm install
+    plan: free
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.9
     disk:
       name: vigilcam-disk
       mountPath: /opt/render/project/src/reports
