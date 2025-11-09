@@ -114,7 +114,7 @@ io.on('connection', (socket) => {
     
     const options = {
       mode: 'json',
-      pythonPath: pythonCommand, // Use detected Python command
+      pythonPath: pythonCommand,
       pythonOptions: ['-u'],
       scriptPath: __dirname,
       args: [data.userId, socket.id]
@@ -133,8 +133,15 @@ io.on('connection', (socket) => {
       });
 
       pyshell.on('message', (message) => {
-        // Emit ML detection data to client
+        console.log('Python message type:', message.type); // Debug log
+        
+        // Emit all detection data to client
         socket.emit('detection-data', message);
+        
+        // Special handling for report
+        if (message.type === 'report') {
+          console.log('Report generated, sending to client');
+        }
       });
 
       pyshell.on('error', (err) => {
@@ -144,8 +151,13 @@ io.on('connection', (socket) => {
         });
       });
 
-      pyshell.on('close', () => {
-        console.log('Python script closed for:', socket.id);
+      pyshell.on('close', (code) => {
+        console.log('Python script closed with code:', code);
+        
+        // Clean up session
+        if (activeSessions.has(socket.id)) {
+          activeSessions.delete(socket.id);
+        }
       });
       
     } catch (err) {
@@ -157,18 +169,29 @@ io.on('connection', (socket) => {
   });
 
   socket.on('stop-monitoring', () => {
-    console.log('Stopping monitoring for:', socket.id);
+    console.log('Stop monitoring requested for:', socket.id);
     const session = activeSessions.get(socket.id);
     
     if (session && session.pyshell) {
       try {
-        session.pyshell.childProcess.kill();
+        // Send SIGTERM to Python process to trigger graceful shutdown
+        session.pyshell.childProcess.stdin.write('\n');
+        session.pyshell.childProcess.kill('SIGTERM');
+        
+        console.log('Sent termination signal to Python process');
+        
+        // Wait a bit for Python to send the report
+        setTimeout(() => {
+          if (session.pyshell && session.pyshell.childProcess) {
+            session.pyshell.childProcess.kill('SIGKILL');
+          }
+          activeSessions.delete(socket.id);
+        }, 3000); // Wait 3 seconds for graceful shutdown
+        
       } catch (err) {
-        console.error('Error killing Python process:', err);
+        console.error('Error stopping Python process:', err);
+        activeSessions.delete(socket.id);
       }
-      activeSessions.delete(socket.id);
-      
-      socket.emit('monitoring-stopped', { message: 'Session ended' });
     }
   });
 
@@ -178,9 +201,14 @@ io.on('connection', (socket) => {
     
     if (session && session.pyshell) {
       try {
-        session.pyshell.childProcess.kill();
+        session.pyshell.childProcess.kill('SIGTERM');
+        setTimeout(() => {
+          if (session.pyshell && session.pyshell.childProcess) {
+            session.pyshell.childProcess.kill('SIGKILL');
+          }
+        }, 2000);
       } catch (err) {
-        console.error('Error killing Python process:', err);
+        console.error('Error killing Python process on disconnect:', err);
       }
       activeSessions.delete(socket.id);
     }
