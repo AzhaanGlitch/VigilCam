@@ -7,14 +7,17 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+  <!-- Background Image -->
+  <div class="background-image"></div>
+  
   <%- include('partials/navbar') %>
   
   <main class="main-content">
     <div class="auth-container">
       <div class="auth-box">
         <div class="auth-header">
-          <h2 class="auth-title">SYSTEM REGISTRATION</h2>
-          <p class="auth-subtitle">Create New Account</p>
+          <h2 class="auth-title">Create Account</h2>
+          <p class="auth-subtitle">Join VigilCam to start monitoring</p>
         </div>
 
         <%- include('partials/messages') %>
@@ -27,7 +30,7 @@
               id="name" 
               name="name" 
               class="form-input"
-              placeholder="John Doe"
+              placeholder="New User"
               value="<%= typeof name !== 'undefined' ? name : '' %>"
               required
             >
@@ -53,7 +56,7 @@
               id="password" 
               name="password" 
               class="form-input"
-              placeholder="••••••••"
+              placeholder="Create a strong password"
               required
             >
             <small class="form-help">Minimum 6 characters</small>
@@ -66,19 +69,18 @@
               id="password2" 
               name="password2" 
               class="form-input"
-              placeholder="••••••••"
+              placeholder="Confirm your password"
               required
             >
           </div>
           
-          <button type="submit" class="btn-primary btn-block">
-            <span class="btn-icon">✓</span>
-            CREATE ACCOUNT
+          <button type="submit" class="btn-primary btn-block btn-large">
+            Create Account
           </button>
         </form>
         
         <div class="auth-footer">
-          <p>Already have an account? <a href="/login" class="auth-link">Login Here</a></p>
+          <p>Already have an account? <a href="/login" class="auth-link">Sign in</a></p>
         </div>
       </div>
     </div>
