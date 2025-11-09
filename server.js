@@ -31,7 +31,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Body parser middleware
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increased for base64 images
 
 // Static folder
 app.use(express.static(path.join(__dirname, 'public')));
@@ -43,7 +43,7 @@ const sessionMiddleware = session({
   saveUninitialized: false,
   cookie: {
     maxAge: 1000 * 60 * 60 * 24, // 24 hours
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax'
   }
@@ -78,189 +78,129 @@ app.use('/users', require('./routes/users'));
 app.use('/monitoring', require('./routes/monitoring'));
 app.use('/history', require('./routes/history'));
 
-// Socket.IO connection handling
-const { PythonShell } = require('python-shell');
-const fs = require('fs');
-
-let activeSessions = new Map();
-
-// Function to find Python executable
-function getPythonCommand() {
-  const { execSync } = require('child_process');
-  
-  const commands = ['python', 'python3', 'py'];
-  
-  for (const cmd of commands) {
-    try {
-      const result = execSync(`${cmd} --version`, { encoding: 'utf8', stdio: 'pipe' });
-      if (result.includes('Python 3')) {
-        console.log(`Found Python: ${cmd} - ${result.trim()}`);
-        return cmd;
-      }
-    } catch (err) {
-      continue;
-    }
-  }
-  
-  console.warn('Warning: Could not detect Python installation. Using default "python3"');
-  return 'python3';
-}
-
-const pythonCommand = getPythonCommand();
-
+// Socket.IO connection handling (CLIENT-SIDE ML VERSION)
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
+  // Client starts monitoring (no Python needed)
   socket.on('start-monitoring', (data) => {
-    console.log('Starting monitoring for user:', data.userId);
-    
-    const options = {
-      mode: 'json',
-      pythonPath: pythonCommand,
-      pythonOptions: ['-u'],
-      scriptPath: __dirname,
-      args: [data.userId, socket.id]
-    };
+    console.log('Monitoring started for user:', data.userId);
+    socket.emit('monitoring-started', { 
+      status: 'success',
+      message: 'Monitoring session initiated'
+    });
+  });
 
-    let pyshell;
+  // Receive violation from client
+  socket.on('violation', async (data) => {
+    console.log('Violation received:', data.violation.type);
+    
+    // Broadcast to monitoring interfaces (if needed for admin dashboard)
+    io.emit('violation-alert', {
+      userId: data.userId,
+      violation: data.violation,
+      socketId: socket.id
+    });
+  });
+
+  // Save report to database
+  socket.on('save-report', async (reportData) => {
+    console.log('Saving report for user:', reportData.userId);
     
     try {
-      pyshell = new PythonShell('vigilcam_stream.py', options);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `exam_report_${reportData.userId}_${timestamp}.json`;
       
-      activeSessions.set(socket.id, {
-        pyshell: pyshell,
-        userId: data.userId,
-        startTime: Date.now()
+      const newReport = new Report({
+        userId: reportData.userId,
+        filename: filename,
+        timestamp: reportData.timestamp,
+        date: reportData.date,
+        duration_seconds: reportData.duration_seconds,
+        total_violations: reportData.total_violations,
+        risk_score: reportData.risk_score,
+        total_blinks: reportData.total_blinks,
+        excessive_blink_count: reportData.excessive_blink_count || 0,
+        gaze_away_count: reportData.gaze_away_count || 0,
+        no_face_count: reportData.no_face_count || 0,
+        multiple_faces_count: reportData.multiple_faces_count || 0,
+        talking_count: reportData.talking_count || 0,
+        eyes_closed_count: reportData.eyes_closed_count || 0,
+        violations: reportData.violations || []
       });
-
-      pyshell.on('message', async (message) => {
-        console.log('Python message type:', message.type);
-        
-        socket.emit('detection-data', message);
-        
-        if (message.type === 'report') {
-          console.log('Report received, saving to database');
-          
-          try {
-            // Save report to database
-            const reportData = message.data;
-            const newReport = new Report({
-              userId: data.userId,
-              filename: reportData.filename,
-              timestamp: reportData.timestamp,
-              date: reportData.date,
-              duration_seconds: reportData.duration_seconds,
-              total_violations: reportData.total_violations,
-              risk_score: reportData.risk_score,
-              total_blinks: reportData.total_blinks,
-              excessive_blink_count: reportData.excessive_blink_count,
-              gaze_away_count: reportData.gaze_away_count,
-              no_face_count: reportData.no_face_count,
-              multiple_faces_count: reportData.multiple_faces_count,
-              talking_count: reportData.talking_count,
-              eyes_closed_count: reportData.eyes_closed_count,
-              violations: reportData.violations
-            });
-            
-            await newReport.save();
-            console.log('Report saved to database successfully');
-            
-            // Send confirmation with database ID
-            socket.emit('report-saved', { 
-              reportId: newReport._id,
-              filename: reportData.filename 
-            });
-            
-          } catch (err) {
-            console.error('Error saving report to database:', err);
-            socket.emit('error', { message: 'Failed to save report to database' });
-          }
-        }
-      });
-
-      pyshell.on('error', (err) => {
-        console.error('Python Error:', err);
-        socket.emit('error', { 
-          message: 'Detection system error. Please ensure Python is installed and all dependencies are available.' 
-        });
-      });
-
-      pyshell.on('close', (code) => {
-        console.log('Python script closed with code:', code);
-        
-        if (activeSessions.has(socket.id)) {
-          activeSessions.delete(socket.id);
-        }
+      
+      await newReport.save();
+      console.log('Report saved successfully:', newReport._id);
+      
+      socket.emit('report-saved', { 
+        success: true,
+        reportId: newReport._id,
+        filename: filename,
+        message: 'Report saved to database'
       });
       
     } catch (err) {
-      console.error('Failed to start Python script:', err);
-      socket.emit('error', { 
-        message: 'Failed to start monitoring. Please check Python installation and dependencies.' 
+      console.error('Error saving report:', err);
+      socket.emit('report-saved', { 
+        success: false,
+        error: err.message,
+        message: 'Failed to save report'
       });
     }
   });
 
+  // Stop monitoring
   socket.on('stop-monitoring', () => {
-    console.log('Stop monitoring requested for:', socket.id);
-    const session = activeSessions.get(socket.id);
-    
-    if (session && session.pyshell) {
-      try {
-        // Send SIGTERM to trigger graceful shutdown
-        if (session.pyshell.childProcess) {
-          session.pyshell.childProcess.kill('SIGTERM');
-        }
-        
-        console.log('Sent termination signal to Python process');
-        
-        // Wait for Python to send report
-        setTimeout(() => {
-          if (session.pyshell && session.pyshell.childProcess) {
-            session.pyshell.childProcess.kill('SIGKILL');
-          }
-          activeSessions.delete(socket.id);
-        }, 5000); // Wait 5 seconds for graceful shutdown
-        
-      } catch (err) {
-        console.error('Error stopping Python process:', err);
-        activeSessions.delete(socket.id);
-      }
-    }
+    console.log('Monitoring stopped for:', socket.id);
+    socket.emit('monitoring-stopped', {
+      status: 'success',
+      message: 'Monitoring session ended'
+    });
   });
 
+  // Handle disconnect
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
-    const session = activeSessions.get(socket.id);
-    
-    if (session && session.pyshell) {
-      try {
-        if (session.pyshell.childProcess) {
-          session.pyshell.childProcess.kill('SIGTERM');
-        }
-        setTimeout(() => {
-          if (session.pyshell && session.pyshell.childProcess) {
-            session.pyshell.childProcess.kill('SIGKILL');
-          }
-        }, 2000);
-      } catch (err) {
-        console.error('Error killing Python process on disconnect:', err);
-      }
-      activeSessions.delete(socket.id);
-    }
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).render('404', {
+    title: '404 - Page Not Found'
   });
 });
 
 // Set port and host
 const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0'; // Critical for Render deployment
+const HOST = process.env.HOST || '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
   console.log(`═══════════════════════════════════════════════`);
-  console.log(`    VigilCam Server Running on Port ${PORT}`);
+  console.log(`    VigilCam Server (Client-Side ML Version)`);
+  console.log(`    Running on Port ${PORT}`);
   console.log(`    Host: ${HOST}`);
-  console.log(`    Access at: http://localhost:${PORT}`);
+  console.log(`    Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`    WebSocket Server: Active`);
-  console.log(`    Python Command: ${pythonCommand}`);
+  console.log(`    ML Processing: Browser-Based ✅`);
+  console.log(`    Python Required: NO ✅`);
   console.log(`═══════════════════════════════════════════════`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });

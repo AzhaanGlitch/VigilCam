@@ -1,21 +1,19 @@
 services:
-  - type: web
-    name: vigilcam
-    runtime: node
-    plan: free
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && npm install
-    startCommand: npm start
-    healthCheckPath: /health
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PYTHON_VERSION
-        value: 3.12.0
-      - key: MONGO_URI
-        sync: false
-      - key: SESSION_SECRET
-        generateValue: true
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
+     - type: web
+       name: vigilcam
+       runtime: node
+       plan: free
+       buildCommand: npm install
+       startCommand: npm start
+       healthCheckPath: /health
+       envVars:
+         - key: NODE_ENV
+           value: production
+         - key: MONGO_URI
+           sync: false
+         - key: SESSION_SECRET
+           generateValue: true
+         - key: GOOGLE_CLIENT_ID
+           sync: false
+         - key: GOOGLE_CLIENT_SECRET
+           sync: false
