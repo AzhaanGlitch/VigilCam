@@ -80,8 +80,14 @@ try:
     mp_face_mesh = mp.solutions.face_mesh
     mp_face_detection = mp.solutions.face_detection
     mp_drawing = mp.solutions.drawing_utils
+    mp_drawing_styles = mp.solutions.drawing_styles
 
-    face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True, max_num_faces=3)
+    face_mesh = mp_face_mesh.FaceMesh(
+        refine_landmarks=True, 
+        max_num_faces=3,
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5
+    )
     face_detection = mp_face_detection.FaceDetection(min_detection_confidence=0.4)
     
     output_json({'type': 'status', 'message': 'MediaPipe initialized'})
@@ -225,6 +231,66 @@ def get_iris_avg(landmarks):
     except Exception:
         return None, None
 
+def draw_face_mesh(frame, face_landmarks):
+    """Draw face mesh with bright cyan dots on the frame"""
+    try:
+        h, w, _ = frame.shape
+        
+        # Define custom drawing specs for bright, visible landmarks
+        landmark_drawing_spec = mp_drawing.DrawingSpec(
+            color=(0, 255, 255),  # Bright cyan color (BGR format)
+            thickness=1,
+            circle_radius=1
+        )
+        
+        connection_drawing_spec = mp_drawing.DrawingSpec(
+            color=(0, 200, 200),  # Slightly dimmer cyan for connections
+            thickness=1,
+            circle_radius=1
+        )
+        
+        # Draw the tesselation (mesh)
+        mp_drawing.draw_landmarks(
+            image=frame,
+            landmark_list=face_landmarks,
+            connections=mp_face_mesh.FACEMESH_TESSELATION,
+            landmark_drawing_spec=landmark_drawing_spec,
+            connection_drawing_spec=connection_drawing_spec
+        )
+        
+        # Draw contours with brighter color for better visibility
+        contour_drawing_spec = mp_drawing.DrawingSpec(
+            color=(0, 255, 255),  # Bright cyan
+            thickness=1,
+            circle_radius=1
+        )
+        
+        mp_drawing.draw_landmarks(
+            image=frame,
+            landmark_list=face_landmarks,
+            connections=mp_face_mesh.FACEMESH_CONTOURS,
+            landmark_drawing_spec=None,
+            connection_drawing_spec=contour_drawing_spec
+        )
+        
+        # Highlight iris with bright green
+        iris_drawing_spec = mp_drawing.DrawingSpec(
+            color=(0, 255, 0),  # Bright green
+            thickness=1,
+            circle_radius=2
+        )
+        
+        mp_drawing.draw_landmarks(
+            image=frame,
+            landmark_list=face_landmarks,
+            connections=mp_face_mesh.FACEMESH_IRISES,
+            landmark_drawing_spec=iris_drawing_spec,
+            connection_drawing_spec=iris_drawing_spec
+        )
+        
+    except Exception as e:
+        pass  # Silently ignore drawing errors
+
 def save_exam_report():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
@@ -304,6 +370,9 @@ try:
             if avgx is not None:
                 calib_x.append(avgx)
                 calib_y.append(avgy)
+            
+            # Draw face mesh during calibration
+            draw_face_mesh(frame, mesh.multi_face_landmarks[0])
         
         # Send frame for calibration display
         _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
@@ -369,6 +438,9 @@ try:
         if mesh.multi_face_landmarks and face_conf >= FACE_DET_CONF and num_faces == 1:
             no_face_start = None
             lm = mesh.multi_face_landmarks[0].landmark
+
+            # DRAW FACE MESH WITH BRIGHT COLORS
+            draw_face_mesh(frame, mesh.multi_face_landmarks[0])
 
             # Eye aspect ratio for blink detection
             left_ear = eye_aspect_ratio(lm, LEFT_EYE, w, h)
