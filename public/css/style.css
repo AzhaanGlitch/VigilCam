@@ -1111,7 +1111,7 @@ body {
    Mobile Responsive Navigation
    ========================================== */
 
-/* Hamburger Menu Button */
+/* Hamburger Menu Button - FIXED POSITIONING */
 .nav-toggle {
   display: none;
   background: transparent;
@@ -1121,6 +1121,7 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 1001;
+  position: relative; /* ADDED */
 }
 
 .nav-toggle:hover {
@@ -1158,32 +1159,41 @@ body {
   transform: rotate(-45deg) translate(6px, -6px);
 }
 
-/* Mobile Menu Styles */
+/* Mobile Menu Styles - FIXED */
 @media (max-width: 768px) {
-  .nav-toggle {
-    display: block;
+  .nav-container {
+    flex-direction: row; /* CHANGED from column */
+    justify-content: space-between; /* ADDED */
+    align-items: center; /* ADDED */
+    padding: 0 1.5rem; /* UPDATED */
   }
 
-  .nav-container {
-    position: relative;
+  .nav-toggle {
+    display: block;
+    margin-left: auto; /* ADDED - pushes to right */
+  }
+
+  .nav-brand {
+    flex-shrink: 0; /* ADDED - prevents shrinking */
   }
 
   .nav-menu {
     position: fixed;
     top: 0;
-    right: -100%;
+    right: -100%; /* Start off-screen */
     width: 280px;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.95);
+    background: rgba(0, 0, 0, 0.98); /* DARKER */
     backdrop-filter: blur(20px);
     flex-direction: column;
-    padding: 5rem 2rem 2rem;
+    padding: 6rem 2rem 2rem; /* INCREASED top padding */
     gap: 1.5rem;
     align-items: flex-start;
     transition: right 0.3s ease;
     z-index: 1000;
     overflow-y: auto;
     border-left: 1px solid var(--border-color);
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5); /* ADDED shadow */
   }
 
   .nav-menu.active {
@@ -1199,17 +1209,25 @@ body {
   .nav-signin {
     display: block;
     width: 100%;
-    padding: 0.8rem 1rem;
+    padding: 1rem;
     text-align: left;
     border-radius: 8px;
+    font-size: 1rem; /* ADDED */
+  }
+
+  .nav-link:hover,
+  .nav-register:hover,
+  .nav-signin:hover {
+    background: rgba(255, 255, 255, 0.1); /* ADDED hover effect */
   }
 
   .nav-user {
     width: 100%;
     justify-content: flex-start;
+    padding: 1rem;
   }
 
-  /* Overlay */
+  /* Overlay - FIXED z-index */
   .nav-overlay {
     display: none;
     position: fixed;
@@ -1217,51 +1235,52 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 999;
+    background: rgba(0, 0, 0, 0.8); /* DARKER */
+    z-index: 999; /* BELOW menu but ABOVE content */
   }
 
   .nav-overlay.active {
     display: block;
   }
+
+  /* Prevent body scroll when menu open */
+  body.menu-open {
+    overflow: hidden;
+  }
 }
 
 /* Tablet Adjustments */
 @media (max-width: 1024px) and (min-width: 769px) {
+  .nav-container {
+    padding: 0 2rem;
+  }
+
   .nav-menu {
     gap: 1.5rem;
   }
 
   .nav-link {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
   }
 }
 
-/* Small Mobile */
+/* Small Mobile - Additional fixes */
 @media (max-width: 480px) {
-  .hero-title {
-    font-size: 2rem !important;
+  .nav-container {
+    padding: 0 1rem;
   }
 
-  .hero-description {
-    font-size: 1rem !important;
+  .brand-text {
+    font-size: 1.1rem;
   }
 
-  .monitoring-layout {
-    grid-template-columns: 1fr !important;
-    gap: 1rem !important;
+  .brand-icon {
+    font-size: 1.5rem;
   }
 
-  .camera-feed {
-    min-height: 200px;
-  }
-
-  .stats-panel {
-    grid-template-columns: 1fr !important;
-  }
-
-  .report-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+  .nav-menu {
+    width: 85%; /* Wider on small screens */
+    max-width: 300px;
   }
 }
 
