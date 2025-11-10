@@ -1,27 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>
-    <%= title %>
-  </title>
+  <title><%= title %></title>
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/public/images/favicon.png">
-  <link rel="apple-touch-icon" href="/public/images/favicon.png">
+  <!-- FIXED: Correct favicon path -->
+  <link rel="icon" type="image/png" href="/images/favicon.png">
+  <link rel="apple-touch-icon" href="/images/favicon.png">
 
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-  <!-- Load MediaPipe FaceMesh -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"
-    crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js"
-    crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"
-    crossorigin="anonymous"></script>
+  <!-- Load MediaPipe BEFORE ml-detector.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
 
   <!-- Socket.IO -->
@@ -69,7 +63,6 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
-      transform: scaleX(-1);
     }
 
     .calibration-overlay {
@@ -353,7 +346,6 @@
         opacity: 0;
         transform: translateX(20px);
       }
-
       to {
         opacity: 1;
         transform: translateX(0);
@@ -370,112 +362,6 @@
         max-height: none;
       }
     }
-
-    /* FIXED Camera Display CSS - Add to monitoring.ejs <style> section */
-
-    .camera-feed {
-      background: var(--bg-card);
-      border: 2px solid var(--border-color);
-      border-radius: 12px;
-      position: relative;
-      overflow: hidden;
-      width: 100%;
-      aspect-ratio: 16/9;
-    }
-
-    /* CRITICAL FIX: Mirror video for natural user experience */
-    .camera-feed video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1);
-      /* Mirror for user comfort */
-      display: block;
-    }
-
-    /* Canvas should NOT be mirrored - mirroring handled in JavaScript */
-    .camera-feed canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      /* NO transform here - handled in drawFaceMesh() */
-    }
-
-    /* Calibration overlay */
-    .calibration-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.85);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-
-    .calibration-text {
-      color: white;
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-
-    .calibration-progress {
-      width: 80%;
-      max-width: 400px;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .calibration-progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #00ffff, #00ff00);
-      transition: width 0.1s linear;
-    }
-
-    /* Mobile responsive fixes */
-    @media (max-width: 768px) {
-      .camera-feed {
-        aspect-ratio: 4/3;
-        min-height: 300px;
-      }
-
-      .camera-feed video,
-      .camera-feed canvas {
-        object-fit: contain;
-      }
-
-      .calibration-text {
-        font-size: 1.2rem;
-        padding: 0 1rem;
-      }
-    }
-
-    /* Monitoring layout mobile fix */
-    @media (max-width: 1200px) {
-      .monitoring-layout {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
-
-      .stats-section {
-        position: relative;
-        max-height: none;
-        top: 0;
-      }
-
-      .stats-panel {
-        grid-template-columns: 1fr;
-      }
-    }
   </style>
 </head>
 
@@ -484,484 +370,344 @@
 
   <%- include('partials/navbar') %>
 
-    <main class="main-content">
-      <%- include('partials/messages') %>
+  <main class="main-content">
+    <%- include('partials/messages') %>
 
-        <section class="monitoring-section">
-          <div class="monitoring-header">
-            <h1 class="monitoring-title">
-              <span class="status-indicator" id="statusIndicator"></span>
-              <span id="monitoringStatus">MONITORING READY</span>
-            </h1>
-            <p class="monitoring-user">
-              Operator: <span class="accent">
-                <%= user.name %>
-              </span> •
-              <span class="material-icons" style="vertical-align: middle; font-size: 1rem;">access_time</span>
-              <span id="sessionTime">00:00</span>
-            </p>
-          </div>
+    <section class="monitoring-section">
+      <div class="monitoring-header">
+        <h1 class="monitoring-title">
+          <span class="status-indicator" id="statusIndicator"></span>
+          <span id="monitoringStatus">MONITORING READY</span>
+        </h1>
+        <p class="monitoring-user">
+          Operator: <span class="accent"><%= user.name %></span> •
+          <span class="material-icons" style="vertical-align: middle; font-size: 1rem;">access_time</span>
+          <span id="sessionTime">00:00</span>
+        </p>
+      </div>
 
-          <div class="monitoring-controls">
-            <button id="startBtn" class="btn-primary btn-large">
-              <span class="material-icons">play_arrow</span>
-              START MONITORING
-            </button>
-            <button id="stopBtn" class="btn-danger btn-large" style="display: none;">
-              <span class="material-icons">stop</span>
-              STOP MONITORING
-            </button>
-          </div>
+      <div class="monitoring-controls">
+        <button id="startBtn" class="btn-primary btn-large">
+          <span class="material-icons">play_arrow</span>
+          START MONITORING
+        </button>
+        <button id="stopBtn" class="btn-danger btn-large" style="display: none;">
+          <span class="material-icons">stop</span>
+          STOP MONITORING
+        </button>
+      </div>
 
-          <div class="monitoring-layout">
+      <div class="monitoring-layout">
+        <!-- Camera Section -->
+        <div class="camera-section">
+          <div class="camera-feed">
+            <video id="videoElement" autoplay playsinline muted></video>
+            <canvas id="outputCanvas"></canvas>
 
-            <!-- Camera Section -->
-            <div class="camera-section">
-              <div class="camera-feed">
-                <video id="videoElement" autoplay playsinline muted></video>
-                <canvas id="outputCanvas"></canvas>
-
-                <!-- Calibration Overlay -->
-                <div id="calibrationOverlay" class="calibration-overlay" style="display: none;">
-                  <div class="calibration-text">
-                    <span class="material-icons"
-                      style="font-size: 3rem; display: block; margin-bottom: 1rem;">face</span>
-                    Look straight at the camera
-                  </div>
-                  <div class="calibration-progress">
-                    <div id="calibrationProgress" class="calibration-progress-bar" style="width: 0%"></div>
-                  </div>
-                  <p style="color: rgba(255,255,255,0.7); margin-top: 1rem; font-size: 0.9rem;">Calibrating gaze
-                    tracking... <span id="calibTime">3</span>s</p>
-                </div>
+            <!-- Calibration Overlay -->
+            <div id="calibrationOverlay" class="calibration-overlay" style="display: none;">
+              <div class="calibration-text">
+                <span class="material-icons" style="font-size: 3rem; display: block; margin-bottom: 1rem;">face</span>
+                Look straight at the camera
               </div>
+              <div class="calibration-progress">
+                <div id="calibrationProgress" class="calibration-progress-bar" style="width: 0%"></div>
+              </div>
+              <p style="color: rgba(255,255,255,0.7); margin-top: 1rem; font-size: 0.9rem;">
+                Calibrating gaze tracking... <span id="calibTime">3</span>s
+              </p>
+            </div>
+          </div>
 
-              <!-- Risk Panel -->
-              <div class="camera-risk-panel">
-                <h3 class="risk-title">
-                  <span class="material-icons">security</span>
-                  THREAT LEVEL
-                </h3>
-                <div class="risk-bar-container">
-                  <div class="risk-bar" id="riskBar"></div>
-                </div>
-                <span class="risk-value" id="riskValue">0</span>
+          <!-- Risk Panel -->
+          <div class="camera-risk-panel">
+            <h3 class="risk-title">
+              <span class="material-icons">security</span>
+              THREAT LEVEL
+            </h3>
+            <div class="risk-bar-container">
+              <div class="risk-bar" id="riskBar"></div>
+            </div>
+            <span class="risk-value" id="riskValue">0</span>
+          </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="stats-section">
+          <div class="stats-panel">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <span class="material-icons" style="color: #00ffff;">visibility</span>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Gaze Direction</span>
+                <span class="stat-value" id="gazeStatus">—</span>
               </div>
             </div>
 
-            <!-- Stats Section -->
-            <div class="stats-section">
-              <div class="stats-panel">
-                <div class="stat-card">
-                  <div class="stat-icon">
-                    <span class="material-icons" style="color: #00ffff;">visibility</span>
-                  </div>
-                  <div class="stat-content">
-                    <span class="stat-label">Gaze Direction</span>
-                    <span class="stat-value" id="gazeStatus">—</span>
-                  </div>
-                </div>
-
-                <div class="stat-card">
-                  <div class="stat-icon">
-                    <span class="material-icons" style="color: #00ffff;">face</span>
-                  </div>
-                  <div class="stat-content">
-                    <span class="stat-label">Faces Detected</span>
-                    <span class="stat-value" id="facesDetected">0</span>
-                  </div>
-                </div>
-
-                <div class="stat-card">
-                  <div class="stat-icon">
-                    <span class="material-icons" style="color: #00ffff;">remove_red_eye</span>
-                  </div>
-                  <div class="stat-content">
-                    <span class="stat-label">Total Blinks</span>
-                    <span class="stat-value" id="blinksCount">0</span>
-                  </div>
-                </div>
-
-                <div class="stat-card">
-                  <div class="stat-icon">
-                    <span class="material-icons" style="color: #ff4444;">warning</span>
-                  </div>
-                  <div class="stat-content">
-                    <span class="stat-label">Violations</span>
-                    <span class="stat-value error-color" id="violationsCount">0</span>
-                  </div>
-                </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <span class="material-icons" style="color: #00ffff;">face</span>
               </div>
+              <div class="stat-content">
+                <span class="stat-label">Faces Detected</span>
+                <span class="stat-value" id="facesDetected">0</span>
+              </div>
+            </div>
 
-              <!-- Violations Log -->
-              <div class="violations-panel">
-                <h3 class="violations-title">
-                  <span class="material-icons">assignment</span>
-                  VIOLATIONS LOG
-                </h3>
-                <div class="violations-list" id="violationsList">
-                  <p class="no-violations">No violations detected yet</p>
-                </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <span class="material-icons" style="color: #00ffff;">remove_red_eye</span>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Total Blinks</span>
+                <span class="stat-value" id="blinksCount">0</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon">
+                <span class="material-icons" style="color: #ff4444;">warning</span>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Violations</span>
+                <span class="stat-value error-color" id="violationsCount">0</span>
               </div>
             </div>
           </div>
 
-          <!-- Report Panel -->
-          <div class="report-panel-inline" id="reportPanel" style="display: none;">
-            <div class="report-header">
-              <span class="material-icons" style="font-size: 2rem; color: var(--success-color);">description</span>
-              <h3>SESSION REPORT GENERATED</h3>
-            </div>
-
-            <div class="report-grid" id="reportGrid"></div>
-
-            <div class="report-actions">
-              <button id="downloadReportBtn" class="btn-primary btn-large">
-                <span class="material-icons">download</span>
-                DOWNLOAD JSON REPORT
-              </button>
-              <a href="/history" class="btn-secondary btn-large">
-                <span class="material-icons">history</span>
-                VIEW ALL REPORTS
-              </a>
-              <button id="newSessionBtn" class="btn-secondary btn-large">
-                <span class="material-icons">refresh</span>
-                START NEW SESSION
-              </button>
+          <!-- Violations Log -->
+          <div class="violations-panel">
+            <h3 class="violations-title">
+              <span class="material-icons">assignment</span>
+              VIOLATIONS LOG
+            </h3>
+            <div class="violations-list" id="violationsList">
+              <p class="no-violations">No violations detected yet</p>
             </div>
           </div>
+        </div>
+      </div>
 
-        </section>
-    </main>
+      <!-- Report Panel -->
+      <div class="report-panel-inline" id="reportPanel" style="display: none;">
+        <div class="report-header">
+          <span class="material-icons" style="font-size: 2rem; color: var(--success-color);">description</span>
+          <h3>SESSION REPORT GENERATED</h3>
+        </div>
 
-    <%- include('partials/footer') %>
+        <div class="report-grid" id="reportGrid"></div>
 
-      <!-- Load ML Detector after MediaPipe -->
-      <script src="/js/ml-detector.js"></script>
+        <div class="report-actions">
+          <button id="downloadReportBtn" class="btn-primary btn-large">
+            <span class="material-icons">download</span>
+            DOWNLOAD JSON REPORT
+          </button>
+          <a href="/history" class="btn-secondary btn-large">
+            <span class="material-icons">history</span>
+            VIEW ALL REPORTS
+          </a>
+          <button id="newSessionBtn" class="btn-secondary btn-large">
+            <span class="material-icons">refresh</span>
+            START NEW SESSION
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
 
-      <script>
-        // Wait for all scripts to load
-        window.addEventListener('load', function () {
-          console.log('Page fully loaded');
-          console.log('FaceMesh available:', typeof FaceMesh !== 'undefined');
+  <%- include('partials/footer') %>
+
+  <!-- Load ML Detector AFTER MediaPipe -->
+  <script src="/js/ml-detector.js"></script>
+
+  <script>
+    // Wait for all scripts to load
+    console.log('Monitoring page script starting...');
+    console.log('FaceMesh available:', typeof FaceMesh !== 'undefined');
+    console.log('Camera available:', typeof Camera !== 'undefined');
+    console.log('drawConnectors available:', typeof drawConnectors !== 'undefined');
+
+    const socket = io();
+    const userId = '<%= user._id %>';
+    let detector = null;
+    let isMonitoring = false;
+    let sessionStartTime = null;
+    let timerInterval = null;
+    let currentReport = null;
+
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const videoElement = document.getElementById('videoElement');
+    const outputCanvas = document.getElementById('outputCanvas');
+    const calibrationOverlay = document.getElementById('calibrationOverlay');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const monitoringStatus = document.getElementById('monitoringStatus');
+
+    function updateSessionTime() {
+      if (sessionStartTime) {
+        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        document.getElementById('sessionTime').textContent =
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    }
+
+    async function startMonitoring() {
+      try {
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> INITIALIZING...';
+
+        // Check MediaPipe
+        if (typeof FaceMesh === 'undefined') {
+          throw new Error('MediaPipe not loaded. Please refresh the page.');
+        }
+
+        // Initialize detector
+        detector = new MLDetector();
+        console.log('Initializing detector...');
+
+        await detector.initialize();
+        console.log('Detector initialized successfully');
+
+        // Show calibration
+        calibrationOverlay.style.display = 'flex';
+        monitoringStatus.textContent = 'CALIBRATING...';
+
+        // Calibration countdown
+        let calibSecsLeft = 3;
+        const calibInterval = setInterval(() => {
+          calibSecsLeft--;
+          document.getElementById('calibTime').textContent = calibSecsLeft;
+          if (calibSecsLeft <= 0) clearInterval(calibInterval);
+        }, 1000);
+
+        // Run calibration
+        await detector.startCalibration((progress) => {
+          document.getElementById('calibrationProgress').style.width = progress + '%';
         });
 
-        const socket = io();
-        const userId = '<%= user._id %>';
-        let detector = null;
-        let isMonitoring = false;
-        let sessionStartTime = null;
-        let timerInterval = null;
-        let currentReport = null;
+        // Hide calibration
+        calibrationOverlay.style.display = 'none';
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-flex';
+        statusIndicator.classList.add('active');
+        monitoringStatus.textContent = 'MONITORING ACTIVE';
 
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const videoElement = document.getElementById('videoElement');
-        const outputCanvas = document.getElementById('outputCanvas');
-        const calibrationOverlay = document.getElementById('calibrationOverlay');
-        const statusIndicator = document.getElementById('statusIndicator');
-        const monitoringStatus = document.getElementById('monitoringStatus');
+        // Setup callbacks
+        detector.onViolation = (violation) => {
+          addViolationToLog(violation);
+          showViolationAlert(violation);
+          socket.emit('violation', { userId: userId, violation: violation });
+        };
 
-        function updateSessionTime() {
-          if (sessionStartTime) {
-            const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
-            const minutes = Math.floor(elapsed / 60);
-            const seconds = elapsed % 60;
-            document.getElementById('sessionTime').textContent =
-              `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        // Start monitoring
+        sessionStartTime = Date.now();
+        timerInterval = setInterval(updateSessionTime, 1000);
+        detector.startMonitoring();
+        isMonitoring = true;
+
+        // Update stats every 500ms
+        setInterval(() => {
+          if (isMonitoring && detector) {
+            const stats = detector.getStats();
+            updateStatsDisplay(stats);
           }
-        }
+        }, 500);
 
-        // CRITICAL FIX: Properly display camera feed in monitoring page
-        // Add this to the monitoring.ejs file, replacing the existing camera setup
+        socket.emit('start-monitoring', { userId: userId });
 
-        // Enhanced camera display handler
-        async function setupCameraDisplay() {
-          try {
-            // Get video element
-            const videoElement = document.getElementById('videoElement');
-            const outputCanvas = document.getElementById('outputCanvas');
+      } catch (error) {
+        console.error('Start monitoring failed:', error);
+        alert('Failed to start monitoring: ' + error.message + '\n\nPlease:\n1. Allow camera access\n2. Refresh the page\n3. Try again');
+        resetUI();
+      }
+    }
 
-            if (!videoElement || !outputCanvas) {
-              console.error('Video element or canvas not found');
-              return false;
-            }
+    startBtn.addEventListener('click', startMonitoring);
 
-            // Set canvas size to match video
-            function resizeCanvas() {
-              if (videoElement.videoWidth > 0) {
-                outputCanvas.width = videoElement.videoWidth;
-                outputCanvas.height = videoElement.videoHeight;
-              }
-            }
+    stopBtn.addEventListener('click', async () => {
+      if (confirm('Stop monitoring and generate report?')) {
+        await stopMonitoringSession();
+      }
+    });
 
-            // Resize canvas when video metadata loads
-            videoElement.addEventListener('loadedmetadata', resizeCanvas);
-            videoElement.addEventListener('resize', resizeCanvas);
+    async function stopMonitoringSession() {
+      isMonitoring = false;
+      stopBtn.disabled = true;
+      stopBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> GENERATING REPORT...';
 
-            // Ensure video is visible
-            videoElement.style.display = 'block';
-            videoElement.style.width = '100%';
-            videoElement.style.height = '100%';
+      if (timerInterval) clearInterval(timerInterval);
 
-            return true;
-          } catch (error) {
-            console.error('Camera display setup error:', error);
-            return false;
-          }
-        }
+      const finalStats = detector.getStats();
+      const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
 
-        // Modified detector initialization with proper camera display
-        async function initializeDetectorWithDisplay() {
-          try {
-            startBtn.disabled = true;
-            startBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> INITIALIZING...';
+      const report = {
+        userId: userId,
+        timestamp: new Date().toISOString(),
+        date: new Date().toLocaleString(),
+        duration_seconds: duration,
+        total_violations: finalStats.violations.length,
+        risk_score: finalStats.riskScore,
+        total_blinks: finalStats.totalBlinks,
+        violations: finalStats.violations,
+        gaze_away_count: finalStats.violations.filter(v => v.type.includes('GAZE')).length,
+        no_face_count: finalStats.violations.filter(v => v.type.includes('FRAME')).length,
+        multiple_faces_count: finalStats.violations.filter(v => v.type.includes('MULTIPLE')).length,
+        talking_count: finalStats.violations.filter(v => v.type.includes('TALKING')).length,
+        eyes_closed_count: finalStats.violations.filter(v => v.type.includes('EYES')).length,
+        excessive_blink_count: finalStats.violations.filter(v => v.type.includes('EXCESSIVE')).length
+      };
 
-            // Check MediaPipe
-            if (typeof FaceMesh === 'undefined') {
-              throw new Error('MediaPipe not loaded. Please refresh the page.');
-            }
+      socket.emit('save-report', report);
+      detector.cleanup();
+      detector = null;
 
-            // Setup camera display first
-            const displayReady = await setupCameraDisplay();
-            if (!displayReady) {
-              throw new Error('Failed to setup camera display');
-            }
+      currentReport = report;
+      showInlineReport(report);
+      resetUI();
+    }
 
-            // Initialize detector
-            detector = new MLDetector();
-            console.log('Initializing detector...');
+    function resetUI() {
+      startBtn.style.display = 'inline-flex';
+      startBtn.disabled = false;
+      startBtn.innerHTML = '<span class="material-icons">play_arrow</span> START MONITORING';
+      stopBtn.style.display = 'none';
+      stopBtn.disabled = false;
+      stopBtn.innerHTML = '<span class="material-icons">stop</span> STOP MONITORING';
+      statusIndicator.classList.remove('active');
+      monitoringStatus.textContent = 'MONITORING STOPPED';
+    }
 
-            await detector.initialize();
-            console.log('Detector initialized successfully');
+    function updateStatsDisplay(stats) {
+      document.getElementById('gazeStatus').textContent = stats.gazeDirection;
+      document.getElementById('facesDetected').textContent = stats.facesDetected;
+      document.getElementById('blinksCount').textContent = stats.totalBlinks;
+      document.getElementById('violationsCount').textContent = stats.violations.length;
 
-            // CRITICAL: Get the video stream and display it
-            const videoElement = document.getElementById('videoElement');
-            const stream = await navigator.mediaDevices.getUserMedia({
-              video: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                facingMode: 'user'
-              },
-              audio: true
-            });
+      const riskScore = stats.riskScore;
+      document.getElementById('riskValue').textContent = riskScore;
+      const riskBar = document.getElementById('riskBar');
+      riskBar.style.width = Math.min(riskScore, 100) + '%';
 
-            // Set video source and play
-            videoElement.srcObject = stream;
-            await videoElement.play();
+      if (riskScore < 25) {
+        riskBar.style.background = '#00ff00';
+      } else if (riskScore < 50) {
+        riskBar.style.background = '#ffaa00';
+      } else {
+        riskBar.style.background = '#ff4444';
+      }
+    }
 
-            console.log('Video stream started and displayed');
+    function addViolationToLog(violation) {
+      const violationsList = document.getElementById('violationsList');
+      const noViolations = violationsList.querySelector('.no-violations');
+      if (noViolations) noViolations.remove();
 
-            // Show calibration
-            calibrationOverlay.style.display = 'flex';
-            monitoringStatus.textContent = 'CALIBRATING...';
-
-            // Calibration countdown
-            let calibSecsLeft = 3;
-            const calibInterval = setInterval(() => {
-              calibSecsLeft--;
-              document.getElementById('calibTime').textContent = calibSecsLeft;
-              if (calibSecsLeft <= 0) clearInterval(calibInterval);
-            }, 1000);
-
-            // Run calibration
-            await detector.startCalibration((progress) => {
-              document.getElementById('calibrationProgress').style.width = progress + '%';
-            });
-
-            // Hide calibration
-            calibrationOverlay.style.display = 'none';
-            startBtn.style.display = 'none';
-            stopBtn.style.display = 'inline-flex';
-            statusIndicator.classList.add('active');
-            monitoringStatus.textContent = 'MONITORING ACTIVE';
-
-            // Setup callbacks
-            detector.onViolation = (violation) => {
-              addViolationToLog(violation);
-              showViolationAlert(violation);
-              socket.emit('violation', { userId: userId, violation: violation });
-            };
-
-            // Start monitoring
-            sessionStartTime = Date.now();
-            timerInterval = setInterval(updateSessionTime, 1000);
-            detector.startMonitoring();
-            isMonitoring = true;
-
-            // Update stats
-            setInterval(() => {
-              if (isMonitoring && detector) {
-                const stats = detector.getStats();
-                updateStatsDisplay(stats);
-
-                // Draw detection visualization on canvas
-                drawDetectionOverlay(stats);
-              }
-            }, 500);
-
-            socket.emit('start-monitoring', { userId: userId });
-
-          } catch (error) {
-            console.error('Start monitoring failed:', error);
-            alert('Failed to start monitoring: ' + error.message + '\n\nPlease:\n1. Allow camera access\n2. Refresh the page\n3. Try again');
-            resetUI();
-          }
-        }
-
-        // Draw detection overlay on canvas
-        function drawDetectionOverlay(stats) {
-          const outputCanvas = document.getElementById('outputCanvas');
-          const videoElement = document.getElementById('videoElement');
-
-          if (!outputCanvas || !videoElement) return;
-
-          const ctx = outputCanvas.getContext('2d');
-          if (!ctx) return;
-
-          // Clear canvas
-          ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
-
-          // Draw gaze indicator
-          const gazeColor = stats.gazeDirection === 'CENTER' ? '#00ff00' : '#ffaa00';
-          ctx.fillStyle = gazeColor;
-          ctx.font = 'bold 24px Arial';
-          ctx.fillText(`Gaze: ${stats.gazeDirection}`, 20, 40);
-
-          // Draw face count
-          const faceColor = stats.facesDetected === 1 ? '#00ff00' : '#ff4444';
-          ctx.fillStyle = faceColor;
-          ctx.fillText(`Faces: ${stats.facesDetected}`, 20, 80);
-
-          // Draw risk indicator
-          const riskColor = stats.riskScore < 25 ? '#00ff00' : stats.riskScore < 50 ? '#ffaa00' : '#ff4444';
-          ctx.fillStyle = riskColor;
-          ctx.fillText(`Risk: ${stats.riskScore}`, 20, 120);
-
-          // Draw corner indicators
-          ctx.strokeStyle = '#00ffff';
-          ctx.lineWidth = 3;
-          const cornerSize = 30;
-
-          // Top-left
-          ctx.beginPath();
-          ctx.moveTo(20, 20 + cornerSize);
-          ctx.lineTo(20, 20);
-          ctx.lineTo(20 + cornerSize, 20);
-          ctx.stroke();
-
-          // Top-right
-          ctx.beginPath();
-          ctx.moveTo(outputCanvas.width - 20 - cornerSize, 20);
-          ctx.lineTo(outputCanvas.width - 20, 20);
-          ctx.lineTo(outputCanvas.width - 20, 20 + cornerSize);
-          ctx.stroke();
-
-          // Bottom-left
-          ctx.beginPath();
-          ctx.moveTo(20, outputCanvas.height - 20 - cornerSize);
-          ctx.lineTo(20, outputCanvas.height - 20);
-          ctx.lineTo(20 + cornerSize, outputCanvas.height - 20);
-          ctx.stroke();
-
-          // Bottom-right
-          ctx.beginPath();
-          ctx.moveTo(outputCanvas.width - 20 - cornerSize, outputCanvas.height - 20);
-          ctx.lineTo(outputCanvas.width - 20, outputCanvas.height - 20);
-          ctx.lineTo(outputCanvas.width - 20, outputCanvas.height - 20 - cornerSize);
-          ctx.stroke();
-        }
-
-        // Update the start button event listener
-        startBtn.addEventListener('click', initializeDetectorWithDisplay);
-
-        // Add error handler for video
-        document.getElementById('videoElement').addEventListener('error', function (e) {
-          console.error('Video element error:', e);
-          alert('Video display error. Please refresh and try again.');
-        });
-
-        stopBtn.addEventListener('click', async () => {
-          if (confirm('Stop monitoring and generate report?')) {
-            await stopMonitoring();
-          }
-        });
-
-        async function stopMonitoring() {
-          isMonitoring = false;
-          stopBtn.disabled = true;
-          stopBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> GENERATING REPORT...';
-
-          if (timerInterval) clearInterval(timerInterval);
-
-          const finalStats = detector.getStats();
-          const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
-
-          const report = {
-            userId: userId,
-            timestamp: new Date().toISOString(),
-            date: new Date().toLocaleString(),
-            duration_seconds: duration,
-            total_violations: finalStats.violations.length,
-            risk_score: finalStats.riskScore,
-            total_blinks: finalStats.totalBlinks,
-            violations: finalStats.violations,
-            gaze_away_count: finalStats.violations.filter(v => v.type.includes('GAZE')).length,
-            no_face_count: finalStats.violations.filter(v => v.type.includes('FRAME')).length,
-            multiple_faces_count: finalStats.violations.filter(v => v.type.includes('MULTIPLE')).length,
-            talking_count: finalStats.violations.filter(v => v.type.includes('TALKING')).length,
-            eyes_closed_count: finalStats.violations.filter(v => v.type.includes('EYES')).length,
-            excessive_blink_count: finalStats.violations.filter(v => v.type.includes('EXCESSIVE')).length
-          };
-
-          socket.emit('save-report', report);
-          detector.cleanup();
-          detector = null;
-
-          currentReport = report;
-          showInlineReport(report);
-          resetUI();
-        }
-
-        function resetUI() {
-          startBtn.style.display = 'inline-flex';
-          startBtn.disabled = false;
-          startBtn.innerHTML = '<span class="material-icons">play_arrow</span> START MONITORING';
-          stopBtn.style.display = 'none';
-          stopBtn.disabled = false;
-          stopBtn.innerHTML = '<span class="material-icons">stop</span> STOP MONITORING';
-          statusIndicator.classList.remove('active');
-          monitoringStatus.textContent = 'MONITORING STOPPED';
-        }
-
-        function updateStatsDisplay(stats) {
-          document.getElementById('gazeStatus').textContent = stats.gazeDirection;
-          document.getElementById('facesDetected').textContent = stats.facesDetected;
-          document.getElementById('blinksCount').textContent = stats.totalBlinks;
-          document.getElementById('violationsCount').textContent = stats.violations.length;
-
-          const riskScore = stats.riskScore;
-          document.getElementById('riskValue').textContent = riskScore;
-          const riskBar = document.getElementById('riskBar');
-          riskBar.style.width = Math.min(riskScore, 100) + '%';
-
-          if (riskScore < 25) {
-            riskBar.style.background = '#00ff00';
-          } else if (riskScore < 50) {
-            riskBar.style.background = '#ffaa00';
-          } else {
-            riskBar.style.background = '#ff4444';
-          }
-        }
-
-        function addViolationToLog(violation) {
-          const violationsList = document.getElementById('violationsList');
-          const noViolations = violationsList.querySelector('.no-violations');
-          if (noViolations) noViolations.remove();
-
-          const violationItem = document.createElement('div');
-          violationItem.className = 'violation-item severity-' + violation.severity.toLowerCase();
-          violationItem.innerHTML = `
+      const violationItem = document.createElement('div');
+      violationItem.className = 'violation-item severity-' + violation.severity.toLowerCase();
+      violationItem.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <span class="material-icons" style="font-size: 0.9rem;">error_outline</span>
@@ -974,34 +720,34 @@
         </div>
       `;
 
-          violationsList.insertBefore(violationItem, violationsList.firstChild);
-          while (violationsList.children.length > 15) {
-            violationsList.removeChild(violationsList.lastChild);
-          }
-        }
+      violationsList.insertBefore(violationItem, violationsList.firstChild);
+      while (violationsList.children.length > 15) {
+        violationsList.removeChild(violationsList.lastChild);
+      }
+    }
 
-        function showViolationAlert(violation) {
-          const alert = document.createElement('div');
-          alert.className = 'floating-alert severity-' + violation.severity.toLowerCase();
-          alert.innerHTML = `
+    function showViolationAlert(violation) {
+      const alert = document.createElement('div');
+      alert.className = 'floating-alert severity-' + violation.severity.toLowerCase();
+      alert.innerHTML = `
         <span class="material-icons">warning</span>
         <span class="alert-text">${violation.type}</span>
       `;
-          document.body.appendChild(alert);
-          setTimeout(() => {
-            alert.style.opacity = '0';
-            setTimeout(() => alert.remove(), 300);
-          }, 3500);
-        }
+      document.body.appendChild(alert);
+      setTimeout(() => {
+        alert.style.opacity = '0';
+        setTimeout(() => alert.remove(), 300);
+      }, 3500);
+    }
 
-        function showInlineReport(report) {
-          const reportGrid = document.getElementById('reportGrid');
-          const durationMinutes = Math.floor(report.duration_seconds / 60);
-          const durationSeconds = Math.floor(report.duration_seconds % 60);
-          const riskLevel = report.risk_score < 25 ? 'LOW' : report.risk_score < 50 ? 'MODERATE' : 'HIGH';
-          const riskColor = report.risk_score < 25 ? '#00ff00' : report.risk_score < 50 ? '#ffaa00' : '#ff4444';
+    function showInlineReport(report) {
+      const reportGrid = document.getElementById('reportGrid');
+      const durationMinutes = Math.floor(report.duration_seconds / 60);
+      const durationSeconds = Math.floor(report.duration_seconds % 60);
+      const riskLevel = report.risk_score < 25 ? 'LOW' : report.risk_score < 50 ? 'MODERATE' : 'HIGH';
+      const riskColor = report.risk_score < 25 ? '#00ff00' : report.risk_score < 50 ? '#ffaa00' : '#ff4444';
 
-          reportGrid.innerHTML = `
+      reportGrid.innerHTML = `
         <div class="report-stat">
           <div class="report-stat-label">Duration</div>
           <div class="report-stat-value">${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}</div>
@@ -1028,47 +774,38 @@
         </div>
       `;
 
-          document.getElementById('reportPanel').style.display = 'block';
-          setTimeout(() => {
-            document.getElementById('reportPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 300);
-        }
+      document.getElementById('reportPanel').style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('reportPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
 
-        document.getElementById('downloadReportBtn').addEventListener('click', () => {
-          if (currentReport) {
-            const dataStr = JSON.stringify(currentReport, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `vigilcam_report_${Date.now()}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }
-        });
+    document.getElementById('downloadReportBtn').addEventListener('click', () => {
+      if (currentReport) {
+        const dataStr = JSON.stringify(currentReport, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `vigilcam_report_${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    });
 
-        document.getElementById('newSessionBtn').addEventListener('click', () => {
-          location.reload();
-        });
+    document.getElementById('newSessionBtn').addEventListener('click', () => {
+      location.reload();
+    });
 
-        socket.on('report-saved', (data) => {
-          console.log('Report saved:', data);
-        });
+    socket.on('report-saved', (data) => {
+      console.log('Report saved:', data);
+    });
 
-        window.addEventListener('beforeunload', () => {
-          if (detector) detector.cleanup();
-        });
-      </script>
-      <!-- Load MediaPipe with Drawing Utilities -->
-      <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"
-        crossorigin="anonymous"></script>
-      <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js"
-        crossorigin="anonymous"></script>
-      <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"
-        crossorigin="anonymous"></script>
-      <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
+    window.addEventListener('beforeunload', () => {
+      if (detector) detector.cleanup();
+    });
+  </script>
 </body>
-
 </html>

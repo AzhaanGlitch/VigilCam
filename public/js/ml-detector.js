@@ -47,6 +47,9 @@ class MLDetector {
       EXCESSIVE_BLINKS: 40,
       HEAD_TURN_THRESHOLD: 0.22
     };
+
+    // Bind methods
+    this.processFaceMesh = this.processFaceMesh.bind(this);
   }
 
   async initialize() {
@@ -90,7 +93,7 @@ class MLDetector {
       minTrackingConfidence: 0.5
     });
 
-    this.faceMesh.onResults((results) => this.processFaceMesh(results));
+    this.faceMesh.onResults(this.processFaceMesh);
     
     console.log('MediaPipe FaceMesh configured');
   }
@@ -138,7 +141,6 @@ class MLDetector {
         this.video.onerror = () => {
           reject(new Error('Video loading failed'));
         };
-        // Add timeout
         setTimeout(() => reject(new Error('Video loading timeout')), 10000);
       });
 
@@ -152,7 +154,7 @@ class MLDetector {
       
       console.log('Canvas size:', this.canvas.width, 'x', this.canvas.height);
 
-      // Setup MediaPipe Camera - CRITICAL FIX
+      // Setup MediaPipe Camera
       this.camera = new Camera(this.video, {
         onFrame: async () => {
           if (this.isRunning && this.faceMesh) {
@@ -177,14 +179,13 @@ class MLDetector {
   }
 
   async startCalibration(onProgress) {
-    const CALIBRATION_TIME = 3000; // 3 seconds
+    const CALIBRATION_TIME = 3000;
     const startTime = Date.now();
     
     this.calibrationData.gazeX = [];
     this.calibrationData.gazeY = [];
     
     console.log('Starting camera for calibration...');
-    // Start camera
     await this.camera.start();
     console.log('Camera started');
     
@@ -246,7 +247,7 @@ class MLDetector {
   }
 
   processFaceMesh(results) {
-    if (!this.ctx || !this.canvas) return;
+    if (!this.ctx || !this.canvas || !this.isRunning) return;
 
     // Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -298,20 +299,20 @@ class MLDetector {
     this.ctx.translate(this.canvas.width, 0);
     this.ctx.scale(-1, 1);
 
-    // Draw tesselation (light mesh)
-    if (typeof drawConnectors !== 'undefined') {
+    // Draw tesselation
+    if (typeof drawConnectors !== 'undefined' && typeof FACEMESH_TESSELATION !== 'undefined') {
       drawConnectors(this.ctx, landmarks, FACEMESH_TESSELATION, {
         color: 'rgba(0, 255, 255, 0.15)',
         lineWidth: 0.5
       });
 
-      // Draw contours (face outline)
+      // Draw contours
       drawConnectors(this.ctx, landmarks, FACEMESH_FACE_OVAL, {
         color: 'rgba(0, 255, 255, 0.6)',
         lineWidth: 1.5
       });
 
-      // Draw irises (eye centers)
+      // Draw irises
       drawConnectors(this.ctx, landmarks, FACEMESH_IRISES, {
         color: 'rgba(0, 255, 0, 0.9)',
         lineWidth: 2
