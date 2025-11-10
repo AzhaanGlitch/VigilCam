@@ -51,13 +51,15 @@ class MLDetector {
 
   async initialize() {
     try {
-      console.log('Starting initialization...');
+      console.log('Starting ML Detector initialization...');
       
       // Setup camera FIRST
       await this.setupCamera();
+      console.log('Camera setup complete');
       
       // Load MediaPipe AFTER camera is ready
       await this.loadMediaPipe();
+      console.log('MediaPipe loaded');
       
       console.log('ML Detector initialized successfully');
       return true;
@@ -68,6 +70,7 @@ class MLDetector {
   }
 
   async loadMediaPipe() {
+    // Check if MediaPipe is loaded
     if (typeof FaceMesh === 'undefined') {
       throw new Error('MediaPipe FaceMesh not loaded. Check CDN scripts in HTML.');
     }
@@ -89,7 +92,7 @@ class MLDetector {
 
     this.faceMesh.onResults((results) => this.processFaceMesh(results));
     
-    console.log('MediaPipe FaceMesh initialized');
+    console.log('MediaPipe FaceMesh configured');
   }
 
   async setupCamera() {
@@ -109,6 +112,8 @@ class MLDetector {
       }
       this.ctx = this.canvas.getContext('2d');
 
+      console.log('Requesting camera access...');
+
       // Request camera access
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -116,7 +121,7 @@ class MLDetector {
           height: { ideal: 720 },
           facingMode: 'user'
         },
-        audio: true
+        audio: false
       });
 
       console.log('Camera access granted');
@@ -133,6 +138,8 @@ class MLDetector {
         this.video.onerror = () => {
           reject(new Error('Video loading failed'));
         };
+        // Add timeout
+        setTimeout(() => reject(new Error('Video loading timeout')), 10000);
       });
 
       // Play video
@@ -145,16 +152,22 @@ class MLDetector {
       
       console.log('Canvas size:', this.canvas.width, 'x', this.canvas.height);
 
-      // Setup MediaPipe Camera
+      // Setup MediaPipe Camera - CRITICAL FIX
       this.camera = new Camera(this.video, {
         onFrame: async () => {
           if (this.isRunning && this.faceMesh) {
-            await this.faceMesh.send({image: this.video});
+            try {
+              await this.faceMesh.send({image: this.video});
+            } catch (err) {
+              console.error('Face mesh processing error:', err);
+            }
           }
         },
         width: 1280,
         height: 720
       });
+
+      console.log('MediaPipe Camera configured');
 
       return stream;
     } catch (error) {
@@ -170,8 +183,10 @@ class MLDetector {
     this.calibrationData.gazeX = [];
     this.calibrationData.gazeY = [];
     
+    console.log('Starting camera for calibration...');
     // Start camera
     await this.camera.start();
+    console.log('Camera started');
     
     return new Promise((resolve) => {
       const calibrationInterval = setInterval(() => {
@@ -200,7 +215,7 @@ class MLDetector {
       this.calibrationData.isCalibrated = true;
       console.log('Calibration complete:', this.calibrationData.baselineX, this.calibrationData.baselineY);
     } else {
-      console.warn('Calibration failed: no face detected');
+      console.warn('Calibration failed: no face detected, using defaults');
       this.calibrationData.baselineX = 0.5;
       this.calibrationData.baselineY = 0.5;
       this.calibrationData.isCalibrated = true;
@@ -216,7 +231,7 @@ class MLDetector {
       gazeDirection: 'CENTER',
       facesDetected: 0
     };
-    console.log('Monitoring started');
+    console.log('Monitoring started - isRunning:', this.isRunning);
   }
 
   stopMonitoring() {
@@ -231,9 +246,12 @@ class MLDetector {
   }
 
   processFaceMesh(results) {
+    if (!this.ctx || !this.canvas) return;
+
     // Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // Check for faces
     if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
       this.handleNoFace();
       return;
@@ -256,13 +274,13 @@ class MLDetector {
     // Process first face only
     const landmarks = results.multiFaceLandmarks[0];
     
-    // Draw face mesh with proper rendering
+    // Draw face mesh
     this.drawFaceMesh(landmarks);
     
     // Eye analysis
     this.analyzeEyes(landmarks);
     
-    // Gaze tracking (FIXED - no mirroring)
+    // Gaze tracking
     this.analyzeGaze(landmarks);
     
     // Mouth movement
@@ -276,28 +294,29 @@ class MLDetector {
     // Save context state
     this.ctx.save();
 
-    // CRITICAL FIX: Apply mirroring ONLY to canvas rendering
-    // This way detection uses correct coordinates, but display is mirrored
+    // Apply mirroring for display
     this.ctx.translate(this.canvas.width, 0);
     this.ctx.scale(-1, 1);
 
     // Draw tesselation (light mesh)
-    drawConnectors(this.ctx, landmarks, FACEMESH_TESSELATION, {
-      color: 'rgba(0, 255, 255, 0.15)',
-      lineWidth: 0.5
-    });
+    if (typeof drawConnectors !== 'undefined') {
+      drawConnectors(this.ctx, landmarks, FACEMESH_TESSELATION, {
+        color: 'rgba(0, 255, 255, 0.15)',
+        lineWidth: 0.5
+      });
 
-    // Draw contours (face outline)
-    drawConnectors(this.ctx, landmarks, FACEMESH_CONTOURS, {
-      color: 'rgba(0, 255, 255, 0.6)',
-      lineWidth: 1.5
-    });
+      // Draw contours (face outline)
+      drawConnectors(this.ctx, landmarks, FACEMESH_FACE_OVAL, {
+        color: 'rgba(0, 255, 255, 0.6)',
+        lineWidth: 1.5
+      });
 
-    // Draw irises (eye centers)
-    drawConnectors(this.ctx, landmarks, FACEMESH_IRISES, {
-      color: 'rgba(0, 255, 0, 0.9)',
-      lineWidth: 2
-    });
+      // Draw irises (eye centers)
+      drawConnectors(this.ctx, landmarks, FACEMESH_IRISES, {
+        color: 'rgba(0, 255, 0, 0.9)',
+        lineWidth: 2
+      });
+    }
 
     // Draw individual landmarks
     for (const landmark of landmarks) {
@@ -399,7 +418,6 @@ class MLDetector {
     
     if (!leftIris || !rightIris) return;
 
-    // Use RAW coordinates (no mirroring for detection logic)
     const avgX = (leftIris.x + rightIris.x) / 2;
     const avgY = (leftIris.y + rightIris.y) / 2;
 
@@ -422,9 +440,7 @@ class MLDetector {
         this.detectionTimers.gazeAway = null;
       }
     } else {
-      // FIXED: Correct left/right detection (no mirroring)
       if (Math.abs(dx) > Math.abs(dy)) {
-        // In camera coordinates: positive dx = looking right, negative = looking left
         direction = dx > 0 ? 'RIGHT' : 'LEFT';
       } else {
         direction = dy < 0 ? 'UP' : 'DOWN';
@@ -512,6 +528,8 @@ class MLDetector {
       this.stats.riskScore += 2;
     }
 
+    console.log('Violation added:', violation);
+
     if (this.onViolation) {
       this.onViolation(violation);
     }
@@ -539,7 +557,7 @@ class MLDetector {
 
   cleanup() {
     this.stopMonitoring();
-    if (this.canvas) {
+    if (this.canvas && this.ctx) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
   }
@@ -548,4 +566,5 @@ class MLDetector {
 // Export
 if (typeof window !== 'undefined') {
   window.MLDetector = MLDetector;
+  console.log('MLDetector class loaded');
 }
