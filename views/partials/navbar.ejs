@@ -85,4 +85,71 @@
       }
     });
   })();
+  
+  // Fixed Hamburger Menu Toggle - Add to navbar.ejs
+(function() {
+  const navToggle = document.getElementById('navToggle');
+  const navMenu = document.getElementById('navMenu');
+  const navOverlay = document.getElementById('navOverlay');
+  const navLinks = document.querySelectorAll('.nav-link, .nav-signin, .nav-register, .nav-logout');
+
+  function toggleMenu() {
+    navToggle.classList.toggle('active');
+    navMenu.classList.toggle('active');
+    navOverlay.classList.toggle('active');
+    
+    // Prevent body scroll when menu is open
+    if (navMenu.classList.contains('active')) {
+      document.body.classList.add('menu-open');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.classList.remove('menu-open');
+      document.body.style.overflow = '';
+    }
+  }
+
+  function closeMenu() {
+    navToggle.classList.remove('active');
+    navMenu.classList.remove('active');
+    navOverlay.classList.remove('active');
+    document.body.classList.remove('menu-open');
+    document.body.style.overflow = '';
+  }
+
+  // Toggle menu on hamburger click
+  if (navToggle) {
+    navToggle.addEventListener('click', function(e) {
+      e.stopPropagation(); // Prevent event bubbling
+      toggleMenu();
+    });
+  }
+
+  // Close menu when clicking overlay
+  if (navOverlay) {
+    navOverlay.addEventListener('click', closeMenu);
+  }
+
+  // Close menu when clicking nav links
+  navLinks.forEach(link => {
+    link.addEventListener('click', closeMenu);
+  });
+
+  // Close menu on window resize if opened
+  let resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
+        closeMenu();
+      }
+    }, 250);
+  });
+
+  // Close menu on ESC key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+      closeMenu();
+    }
+  });
+})();
 </script>
