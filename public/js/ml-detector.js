@@ -1,6 +1,6 @@
 /**
- * VigilCam Client-Side ML Detection
- * Uses TensorFlow.js and MediaPipe for browser-based face detection
+ * FIXED: Camera Detection System
+ * Resolves mirroring, face mesh display, and detection accuracy issues
  */
 
 class MLDetector {
@@ -9,6 +9,7 @@ class MLDetector {
     this.canvas = null;
     this.ctx = null;
     this.faceMesh = null;
+    this.camera = null;
     this.isRunning = false;
     this.calibrationData = {
       gazeX: [],
@@ -42,24 +43,26 @@ class MLDetector {
       EAR_BLINK: 0.21,
       BLINK_FRAMES: 2,
       BLINK_MIN_SEP: 0.35,
-      EYES_CLOSED_TIME: 4000, // ms
+      EYES_CLOSED_TIME: 4000,
       GAZE_AWAY_TIME: 4000,
       NO_FACE_TIME: 6000,
       GAZE_X_DELTA: 0.07,
       GAZE_Y_DELTA: 0.06,
       MOUTH_MOVEMENT: 0.5,
-      EXCESSIVE_BLINKS: 40, // per minute
+      EXCESSIVE_BLINKS: 40,
       HEAD_TURN_THRESHOLD: 0.22
     };
   }
 
   async initialize() {
     try {
-      // Load MediaPipe FaceMesh
-      await this.loadMediaPipe();
+      console.log('Starting initialization...');
       
-      // Setup video stream
+      // Setup camera FIRST
       await this.setupCamera();
+      
+      // Load MediaPipe AFTER camera is ready
+      await this.loadMediaPipe();
       
       console.log('ML Detector initialized successfully');
       return true;
@@ -70,12 +73,12 @@ class MLDetector {
   }
 
   async loadMediaPipe() {
-    // Wait for MediaPipe to be loaded from HTML script tags
     if (typeof FaceMesh === 'undefined') {
       throw new Error('MediaPipe FaceMesh not loaded. Check CDN scripts in HTML.');
     }
 
-    // Initialize FaceMesh
+    console.log('Initializing MediaPipe FaceMesh...');
+
     this.faceMesh = new FaceMesh({
       locateFile: (file) => {
         return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`;
@@ -95,31 +98,72 @@ class MLDetector {
   }
 
   async setupCamera() {
-    this.video = document.createElement('video');
-    this.video.setAttribute('playsinline', '');
-    this.video.setAttribute('autoplay', '');
-    
     try {
+      console.log('Setting up camera...');
+      
+      // Get video element
+      this.video = document.getElementById('videoElement');
+      if (!this.video) {
+        throw new Error('Video element not found');
+      }
+
+      // Get canvas element
+      this.canvas = document.getElementById('outputCanvas');
+      if (!this.canvas) {
+        throw new Error('Canvas element not found');
+      }
+      this.ctx = this.canvas.getContext('2d');
+
+      // Request camera access
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
           facingMode: 'user'
         },
-        audio: true // For future audio detection
+        audio: true
       });
-      
+
+      console.log('Camera access granted');
+
+      // Set video source
       this.video.srcObject = stream;
-      await this.video.play();
       
-      // Setup canvas for processing
-      this.canvas = document.createElement('canvas');
+      // Wait for video to load
+      await new Promise((resolve, reject) => {
+        this.video.onloadedmetadata = () => {
+          console.log('Video metadata loaded');
+          resolve();
+        };
+        this.video.onerror = () => {
+          reject(new Error('Video loading failed'));
+        };
+      });
+
+      // Play video
+      await this.video.play();
+      console.log('Video playing');
+
+      // Set canvas size to match video
       this.canvas.width = this.video.videoWidth;
       this.canvas.height = this.video.videoHeight;
-      this.ctx = this.canvas.getContext('2d');
       
+      console.log('Canvas size:', this.canvas.width, 'x', this.canvas.height);
+
+      // Setup MediaPipe Camera
+      this.camera = new Camera(this.video, {
+        onFrame: async () => {
+          if (this.isRunning && this.faceMesh) {
+            await this.faceMesh.send({image: this.video});
+          }
+        },
+        width: 1280,
+        height: 720
+      });
+
       return stream;
     } catch (error) {
+      console.error('Camera setup error:', error);
       throw new Error(`Camera access denied: ${error.message}`);
     }
   }
@@ -131,17 +175,17 @@ class MLDetector {
     this.calibrationData.gazeX = [];
     this.calibrationData.gazeY = [];
     
+    // Start camera
+    await this.camera.start();
+    
     return new Promise((resolve) => {
-      const calibrationInterval = setInterval(async () => {
+      const calibrationInterval = setInterval(() => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min((elapsed / CALIBRATION_TIME) * 100, 100);
         
         if (onProgress) {
           onProgress(progress);
         }
-        
-        // Process frame for calibration
-        await this.processFrame();
         
         if (elapsed >= CALIBRATION_TIME) {
           clearInterval(calibrationInterval);
@@ -162,7 +206,6 @@ class MLDetector {
       console.log('Calibration complete:', this.calibrationData.baselineX, this.calibrationData.baselineY);
     } else {
       console.warn('Calibration failed: no face detected');
-      // Use default center values
       this.calibrationData.baselineX = 0.5;
       this.calibrationData.baselineY = 0.5;
       this.calibrationData.isCalibrated = true;
@@ -178,36 +221,24 @@ class MLDetector {
       gazeDirection: 'CENTER',
       facesDetected: 0
     };
-    this.monitoringLoop();
+    console.log('Monitoring started');
   }
 
   stopMonitoring() {
     this.isRunning = false;
+    if (this.camera) {
+      this.camera.stop();
+    }
     if (this.video && this.video.srcObject) {
       this.video.srcObject.getTracks().forEach(track => track.stop());
     }
-  }
-
-  async monitoringLoop() {
-    if (!this.isRunning) return;
-    
-    await this.processFrame();
-    
-    // 30 FPS
-    setTimeout(() => this.monitoringLoop(), 33);
-  }
-
-  async processFrame() {
-    if (!this.video || !this.ctx) return;
-    
-    // Draw video frame to canvas
-    this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-    
-    // Process with MediaPipe
-    await this.faceMesh.send({ image: this.canvas });
+    console.log('Monitoring stopped');
   }
 
   processFaceMesh(results) {
+    // Clear canvas
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
     if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
       this.handleNoFace();
       return;
@@ -230,6 +261,9 @@ class MLDetector {
     // Process first face only
     const landmarks = results.multiFaceLandmarks[0];
     
+    // Draw face mesh
+    this.drawFaceMesh(results.multiFaceLandmarks[0]);
+    
     // Eye analysis
     this.analyzeEyes(landmarks);
     
@@ -243,14 +277,43 @@ class MLDetector {
     this.analyzeHeadPose(landmarks);
   }
 
+  drawFaceMesh(landmarks) {
+    // Draw connections
+    drawConnectors(this.ctx, landmarks, FACEMESH_TESSELATION, {
+      color: 'rgba(0, 255, 255, 0.2)',
+      lineWidth: 1
+    });
+
+    // Draw contours
+    drawConnectors(this.ctx, landmarks, FACEMESH_CONTOURS, {
+      color: 'rgba(0, 255, 255, 0.5)',
+      lineWidth: 2
+    });
+
+    // Draw irises
+    drawConnectors(this.ctx, landmarks, FACEMESH_IRISES, {
+      color: 'rgba(0, 255, 0, 0.8)',
+      lineWidth: 2
+    });
+
+    // Draw landmarks
+    for (const landmark of landmarks) {
+      const x = landmark.x * this.canvas.width;
+      const y = landmark.y * this.canvas.height;
+      
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, 1, 0, 2 * Math.PI);
+      this.ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+      this.ctx.fill();
+    }
+  }
+
   analyzeEyes(landmarks) {
-    // Left eye landmarks (simplified)
     const leftEye = [
       landmarks[33], landmarks[160], landmarks[158],
       landmarks[133], landmarks[153], landmarks[144]
     ];
     
-    // Right eye landmarks
     const rightEye = [
       landmarks[362], landmarks[385], landmarks[387],
       landmarks[263], landmarks[373], landmarks[380]
@@ -260,24 +323,20 @@ class MLDetector {
     const rightEAR = this.calculateEAR(rightEye);
     const avgEAR = (leftEAR + rightEAR) / 2;
 
-    // Blink detection
     if (avgEAR < this.THRESHOLDS.EAR_BLINK) {
       this.blinkState.frames++;
       
-      // Eyes closed for too long
       if (!this.detectionTimers.eyesClosed) {
         this.detectionTimers.eyesClosed = setTimeout(() => {
           this.addViolation('EYES CLOSED FOR EXTENDED TIME', 'MEDIUM');
         }, this.THRESHOLDS.EYES_CLOSED_TIME);
       }
     } else {
-      // Eyes opened
       if (this.detectionTimers.eyesClosed) {
         clearTimeout(this.detectionTimers.eyesClosed);
         this.detectionTimers.eyesClosed = null;
       }
       
-      // Blink detected
       if (this.blinkState.frames >= this.THRESHOLDS.BLINK_FRAMES) {
         const now = Date.now();
         if (now - this.blinkState.lastBlinkTime > this.THRESHOLDS.BLINK_MIN_SEP * 1000) {
@@ -285,7 +344,6 @@ class MLDetector {
           this.blinkState.lastBlinkTime = now;
           this.blinkState.history.push(now);
           
-          // Check excessive blinking
           const recentBlinks = this.blinkState.history.filter(
             t => now - t < 60000
           ).length;
@@ -300,7 +358,6 @@ class MLDetector {
   }
 
   calculateEAR(eyeLandmarks) {
-    // Eye Aspect Ratio calculation
     const p1 = eyeLandmarks[1];
     const p2 = eyeLandmarks[2];
     const p3 = eyeLandmarks[3];
@@ -317,7 +374,6 @@ class MLDetector {
   }
 
   analyzeGaze(landmarks) {
-    // Use iris landmarks (468 = left iris, 473 = right iris)
     const leftIris = landmarks[468];
     const rightIris = landmarks[473];
     
@@ -326,14 +382,12 @@ class MLDetector {
     const avgX = (leftIris.x + rightIris.x) / 2;
     const avgY = (leftIris.y + rightIris.y) / 2;
 
-    // Store calibration data
     if (!this.calibrationData.isCalibrated) {
       this.calibrationData.gazeX.push(avgX);
       this.calibrationData.gazeY.push(avgY);
       return;
     }
 
-    // Calculate gaze direction
     const dx = avgX - this.calibrationData.baselineX;
     const dy = avgY - this.calibrationData.baselineY;
 
@@ -342,7 +396,6 @@ class MLDetector {
         Math.abs(dy) <= this.THRESHOLDS.GAZE_Y_DELTA) {
       direction = 'CENTER';
       
-      // Clear gaze away timer
       if (this.detectionTimers.gazeAway) {
         clearTimeout(this.detectionTimers.gazeAway);
         this.detectionTimers.gazeAway = null;
@@ -354,7 +407,6 @@ class MLDetector {
         direction = dy < 0 ? 'UP' : 'DOWN';
       }
 
-      // Start gaze away timer
       if (!this.detectionTimers.gazeAway) {
         this.detectionTimers.gazeAway = setTimeout(() => {
           this.addViolation(`GAZE AWAY - LOOKING ${direction}`, 'MEDIUM');
@@ -375,7 +427,6 @@ class MLDetector {
       this.mouthHistory.shift();
     }
 
-    // Detect talking (mouth movement variance)
     if (this.mouthHistory.length >= 20) {
       const variance = this.calculateVariance(this.mouthHistory);
       
@@ -416,11 +467,10 @@ class MLDetector {
   }
 
   addViolation(type, severity) {
-    // Throttle same violation type
     const lastViolation = this.stats.violations[this.stats.violations.length - 1];
     if (lastViolation && lastViolation.type === type) {
       const timeDiff = Date.now() - new Date(lastViolation.timestamp).getTime();
-      if (timeDiff < 5000) return; // Don't add same violation within 5 seconds
+      if (timeDiff < 5000) return;
     }
 
     const violation = {
@@ -431,7 +481,6 @@ class MLDetector {
 
     this.stats.violations.push(violation);
 
-    // Update risk score
     if (severity === 'HIGH') {
       this.stats.riskScore += 10;
     } else if (severity === 'MEDIUM') {
@@ -440,7 +489,6 @@ class MLDetector {
       this.stats.riskScore += 2;
     }
 
-    // Emit violation event
     if (this.onViolation) {
       this.onViolation(violation);
     }
@@ -453,12 +501,6 @@ class MLDetector {
     };
   }
 
-  getFrame() {
-    if (!this.canvas) return null;
-    return this.canvas.toDataURL('image/jpeg', 0.7);
-  }
-
-  // Utility functions
   distance(p1, p2) {
     const dx = p1.x - p2.x;
     const dy = p1.y - p2.y;
@@ -475,61 +517,12 @@ class MLDetector {
   cleanup() {
     this.stopMonitoring();
     if (this.canvas) {
-      this.canvas.remove();
-    }
-    if (this.video) {
-      this.video.remove();
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
   }
-  async setupCamera() {
-  this.video = document.getElementById('videoElement');
-  if (!this.video) {
-    this.video = document.createElement('video');
-    this.video.id = 'videoElement';
-  }
-  
-  this.video.setAttribute('playsinline', '');
-  this.video.setAttribute('autoplay', '');
-  this.video.style.display = 'block'; // CRITICAL
-  
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        facingMode: 'user'
-      },
-      audio: true
-    });
-    
-    this.video.srcObject = stream;
-    
-    // Wait for video to be ready
-    await new Promise((resolve) => {
-      this.video.onloadedmetadata = () => {
-        this.video.play().then(resolve);
-      };
-    });
-    
-    // Setup canvas
-    this.canvas = document.getElementById('outputCanvas') || document.createElement('canvas');
-    this.canvas.width = this.video.videoWidth;
-    this.canvas.height = this.video.videoHeight;
-    this.ctx = this.canvas.getContext('2d');
-    
-    console.log('Camera setup complete:', {
-      videoWidth: this.video.videoWidth,
-      videoHeight: this.video.videoHeight
-    });
-    
-    return stream;
-  } catch (error) {
-    throw new Error(`Camera access denied: ${error.message}`);
-  }
-}
 }
 
-// Export for use in monitoring page
+// Export
 if (typeof window !== 'undefined') {
   window.MLDetector = MLDetector;
 }
