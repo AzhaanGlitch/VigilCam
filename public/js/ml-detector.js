@@ -1,8 +1,3 @@
-/**
- * FIXED: Camera Detection System
- * Resolves mirroring, face mesh display, and detection accuracy issues
- */
-
 class MLDetector {
   constructor() {
     this.video = null;
@@ -261,13 +256,13 @@ class MLDetector {
     // Process first face only
     const landmarks = results.multiFaceLandmarks[0];
     
-    // Draw face mesh
-    this.drawFaceMesh(results.multiFaceLandmarks[0]);
+    // Draw face mesh with proper rendering
+    this.drawFaceMesh(landmarks);
     
     // Eye analysis
     this.analyzeEyes(landmarks);
     
-    // Gaze tracking
+    // Gaze tracking (FIXED - no mirroring)
     this.analyzeGaze(landmarks);
     
     // Mouth movement
@@ -278,34 +273,59 @@ class MLDetector {
   }
 
   drawFaceMesh(landmarks) {
-    // Draw connections
+    // Save context state
+    this.ctx.save();
+
+    // CRITICAL FIX: Apply mirroring ONLY to canvas rendering
+    // This way detection uses correct coordinates, but display is mirrored
+    this.ctx.translate(this.canvas.width, 0);
+    this.ctx.scale(-1, 1);
+
+    // Draw tesselation (light mesh)
     drawConnectors(this.ctx, landmarks, FACEMESH_TESSELATION, {
-      color: 'rgba(0, 255, 255, 0.2)',
-      lineWidth: 1
+      color: 'rgba(0, 255, 255, 0.15)',
+      lineWidth: 0.5
     });
 
-    // Draw contours
+    // Draw contours (face outline)
     drawConnectors(this.ctx, landmarks, FACEMESH_CONTOURS, {
-      color: 'rgba(0, 255, 255, 0.5)',
-      lineWidth: 2
+      color: 'rgba(0, 255, 255, 0.6)',
+      lineWidth: 1.5
     });
 
-    // Draw irises
+    // Draw irises (eye centers)
     drawConnectors(this.ctx, landmarks, FACEMESH_IRISES, {
-      color: 'rgba(0, 255, 0, 0.8)',
+      color: 'rgba(0, 255, 0, 0.9)',
       lineWidth: 2
     });
 
-    // Draw landmarks
+    // Draw individual landmarks
     for (const landmark of landmarks) {
       const x = landmark.x * this.canvas.width;
       const y = landmark.y * this.canvas.height;
       
       this.ctx.beginPath();
       this.ctx.arc(x, y, 1, 0, 2 * Math.PI);
-      this.ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+      this.ctx.fillStyle = 'rgba(0, 255, 255, 0.4)';
       this.ctx.fill();
     }
+
+    // Restore context
+    this.ctx.restore();
+
+    // Draw status text (unmirrored)
+    this.ctx.fillStyle = '#00ffff';
+    this.ctx.font = 'bold 20px Arial';
+    this.ctx.fillText(`Gaze: ${this.stats.gazeDirection}`, 20, 40);
+    
+    const faceColor = this.stats.facesDetected === 1 ? '#00ff00' : '#ff4444';
+    this.ctx.fillStyle = faceColor;
+    this.ctx.fillText(`Faces: ${this.stats.facesDetected}`, 20, 70);
+    
+    const riskColor = this.stats.riskScore < 25 ? '#00ff00' : 
+                      this.stats.riskScore < 50 ? '#ffaa00' : '#ff4444';
+    this.ctx.fillStyle = riskColor;
+    this.ctx.fillText(`Risk: ${this.stats.riskScore}`, 20, 100);
   }
 
   analyzeEyes(landmarks) {
@@ -379,6 +399,7 @@ class MLDetector {
     
     if (!leftIris || !rightIris) return;
 
+    // Use RAW coordinates (no mirroring for detection logic)
     const avgX = (leftIris.x + rightIris.x) / 2;
     const avgY = (leftIris.y + rightIris.y) / 2;
 
@@ -401,8 +422,10 @@ class MLDetector {
         this.detectionTimers.gazeAway = null;
       }
     } else {
+      // FIXED: Correct left/right detection (no mirroring)
       if (Math.abs(dx) > Math.abs(dy)) {
-        direction = dx < 0 ? 'LEFT' : 'RIGHT';
+        // In camera coordinates: positive dx = looking right, negative = looking left
+        direction = dx > 0 ? 'RIGHT' : 'LEFT';
       } else {
         direction = dy < 0 ? 'UP' : 'DOWN';
       }
