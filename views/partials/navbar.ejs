@@ -9,7 +9,19 @@
       </a>
     </div>
     
-    <ul class="nav-menu">
+    <!-- Hamburger Menu Button -->
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+      <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </button>
+
+    <!-- Mobile Overlay -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    
+    <ul class="nav-menu" id="navMenu">
     <% if (typeof user !== 'undefined' && user) { %>
       <li><a href="/" class="nav-link">Dashboard</a></li>
       <li><a href="/monitoring" class="nav-link">Monitoring</a></li>
@@ -22,12 +34,55 @@
       </span></li>
       <li><a href="/users/logout" class="nav-link nav-logout">Sign out</a></li>
     <% } else { %>
-        <li><a href="/" class="nav-link">Dashboard</a></li>
-        <li><a href="/about" class="nav-link">About Us</a></li>
-        <li><a href="/contact" class="nav-link">Contact</a></li>
-        <li><a href="/login" class="nav-link nav-signin">Sign in</a></li>
-        <li><a href="/register" class="nav-link nav-register">Register</a></li>
-      <% } %>
+      <li><a href="/" class="nav-link">Dashboard</a></li>
+      <li><a href="/about" class="nav-link">About Us</a></li>
+      <li><a href="/contact" class="nav-link">Contact</a></li>
+      <li><a href="/login" class="nav-link nav-signin">Sign in</a></li>
+      <li><a href="/register" class="nav-link nav-register">Register</a></li>
+    <% } %>
     </ul>
   </div>
 </nav>
+
+<script>
+  // Hamburger Menu Toggle
+  (function() {
+    const navToggle = document.getElementById('navToggle');
+    const navMenu = document.getElementById('navMenu');
+    const navOverlay = document.getElementById('navOverlay');
+    const navLinks = document.querySelectorAll('.nav-link, .nav-signin, .nav-register, .nav-logout');
+
+    function toggleMenu() {
+      navToggle.classList.toggle('active');
+      navMenu.classList.toggle('active');
+      navOverlay.classList.toggle('active');
+      document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+    }
+
+    function closeMenu() {
+      navToggle.classList.remove('active');
+      navMenu.classList.remove('active');
+      navOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    if (navToggle) {
+      navToggle.addEventListener('click', toggleMenu);
+    }
+
+    if (navOverlay) {
+      navOverlay.addEventListener('click', closeMenu);
+    }
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', closeMenu);
+    });
+
+    // Close menu on window resize if opened
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
+        closeMenu();
+      }
+    });
+  })();
+</script>

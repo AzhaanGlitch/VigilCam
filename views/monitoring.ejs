@@ -548,81 +548,214 @@
       }
     }
 
-    startBtn.addEventListener('click', async () => {
-      try {
-        startBtn.disabled = true;
-        startBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> INITIALIZING...';
+   // CRITICAL FIX: Properly display camera feed in monitoring page
+// Add this to the monitoring.ejs file, replacing the existing camera setup
 
-        // Check MediaPipe
-        if (typeof FaceMesh === 'undefined') {
-          throw new Error('MediaPipe not loaded. Please refresh the page.');
-        }
+// Enhanced camera display handler
+async function setupCameraDisplay() {
+  try {
+    // Get video element
+    const videoElement = document.getElementById('videoElement');
+    const outputCanvas = document.getElementById('outputCanvas');
+    
+    if (!videoElement || !outputCanvas) {
+      console.error('Video element or canvas not found');
+      return false;
+    }
 
-        // Initialize detector
-        detector = new MLDetector();
-        console.log('Initializing detector...');
-        
-        try {
-          await detector.initialize();
-          console.log('Detector initialized successfully');
-        } catch (initError) {
-          console.error('Detector init error:', initError);
-          throw initError;
-        }
-
-        // Show calibration
-        calibrationOverlay.style.display = 'flex';
-        monitoringStatus.textContent = 'CALIBRATING...';
-
-        // Calibration countdown
-        let calibSecsLeft = 3;
-        const calibInterval = setInterval(() => {
-          calibSecsLeft--;
-          document.getElementById('calibTime').textContent = calibSecsLeft;
-          if (calibSecsLeft <= 0) clearInterval(calibInterval);
-        }, 1000);
-
-        // Run calibration
-        await detector.startCalibration((progress) => {
-          document.getElementById('calibrationProgress').style.width = progress + '%';
-        });
-
-        // Hide calibration
-        calibrationOverlay.style.display = 'none';
-        startBtn.style.display = 'none';
-        stopBtn.style.display = 'inline-flex';
-        statusIndicator.classList.add('active');
-        monitoringStatus.textContent = 'MONITORING ACTIVE';
-
-        // Setup callbacks
-        detector.onViolation = (violation) => {
-          addViolationToLog(violation);
-          showViolationAlert(violation);
-          socket.emit('violation', { userId: userId, violation: violation });
-        };
-
-        // Start monitoring
-        sessionStartTime = Date.now();
-        timerInterval = setInterval(updateSessionTime, 1000);
-        detector.startMonitoring();
-        isMonitoring = true;
-
-        // Update stats
-        setInterval(() => {
-          if (isMonitoring && detector) {
-            const stats = detector.getStats();
-            updateStatsDisplay(stats);
-          }
-        }, 500);
-
-        socket.emit('start-monitoring', { userId: userId });
-
-      } catch (error) {
-        console.error('Start monitoring failed:', error);
-        alert('Failed to start monitoring: ' + error.message + '\n\nPlease:\n1. Allow camera access\n2. Refresh the page\n3. Try again');
-        resetUI();
+    // Set canvas size to match video
+    function resizeCanvas() {
+      if (videoElement.videoWidth > 0) {
+        outputCanvas.width = videoElement.videoWidth;
+        outputCanvas.height = videoElement.videoHeight;
       }
+    }
+
+    // Resize canvas when video metadata loads
+    videoElement.addEventListener('loadedmetadata', resizeCanvas);
+    videoElement.addEventListener('resize', resizeCanvas);
+
+    // Ensure video is visible
+    videoElement.style.display = 'block';
+    videoElement.style.width = '100%';
+    videoElement.style.height = '100%';
+    
+    return true;
+  } catch (error) {
+    console.error('Camera display setup error:', error);
+    return false;
+  }
+}
+
+// Modified detector initialization with proper camera display
+async function initializeDetectorWithDisplay() {
+  try {
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> INITIALIZING...';
+
+    // Check MediaPipe
+    if (typeof FaceMesh === 'undefined') {
+      throw new Error('MediaPipe not loaded. Please refresh the page.');
+    }
+
+    // Setup camera display first
+    const displayReady = await setupCameraDisplay();
+    if (!displayReady) {
+      throw new Error('Failed to setup camera display');
+    }
+
+    // Initialize detector
+    detector = new MLDetector();
+    console.log('Initializing detector...');
+    
+    await detector.initialize();
+    console.log('Detector initialized successfully');
+
+    // CRITICAL: Get the video stream and display it
+    const videoElement = document.getElementById('videoElement');
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: 'user'
+      },
+      audio: true
     });
+
+    // Set video source and play
+    videoElement.srcObject = stream;
+    await videoElement.play();
+
+    console.log('Video stream started and displayed');
+
+    // Show calibration
+    calibrationOverlay.style.display = 'flex';
+    monitoringStatus.textContent = 'CALIBRATING...';
+
+    // Calibration countdown
+    let calibSecsLeft = 3;
+    const calibInterval = setInterval(() => {
+      calibSecsLeft--;
+      document.getElementById('calibTime').textContent = calibSecsLeft;
+      if (calibSecsLeft <= 0) clearInterval(calibInterval);
+    }, 1000);
+
+    // Run calibration
+    await detector.startCalibration((progress) => {
+      document.getElementById('calibrationProgress').style.width = progress + '%';
+    });
+
+    // Hide calibration
+    calibrationOverlay.style.display = 'none';
+    startBtn.style.display = 'none';
+    stopBtn.style.display = 'inline-flex';
+    statusIndicator.classList.add('active');
+    monitoringStatus.textContent = 'MONITORING ACTIVE';
+
+    // Setup callbacks
+    detector.onViolation = (violation) => {
+      addViolationToLog(violation);
+      showViolationAlert(violation);
+      socket.emit('violation', { userId: userId, violation: violation });
+    };
+
+    // Start monitoring
+    sessionStartTime = Date.now();
+    timerInterval = setInterval(updateSessionTime, 1000);
+    detector.startMonitoring();
+    isMonitoring = true;
+
+    // Update stats
+    setInterval(() => {
+      if (isMonitoring && detector) {
+        const stats = detector.getStats();
+        updateStatsDisplay(stats);
+        
+        // Draw detection visualization on canvas
+        drawDetectionOverlay(stats);
+      }
+    }, 500);
+
+    socket.emit('start-monitoring', { userId: userId });
+
+  } catch (error) {
+    console.error('Start monitoring failed:', error);
+    alert('Failed to start monitoring: ' + error.message + '\n\nPlease:\n1. Allow camera access\n2. Refresh the page\n3. Try again');
+    resetUI();
+  }
+}
+
+// Draw detection overlay on canvas
+function drawDetectionOverlay(stats) {
+  const outputCanvas = document.getElementById('outputCanvas');
+  const videoElement = document.getElementById('videoElement');
+  
+  if (!outputCanvas || !videoElement) return;
+
+  const ctx = outputCanvas.getContext('2d');
+  if (!ctx) return;
+
+  // Clear canvas
+  ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+  // Draw gaze indicator
+  const gazeColor = stats.gazeDirection === 'CENTER' ? '#00ff00' : '#ffaa00';
+  ctx.fillStyle = gazeColor;
+  ctx.font = 'bold 24px Arial';
+  ctx.fillText(`Gaze: ${stats.gazeDirection}`, 20, 40);
+
+  // Draw face count
+  const faceColor = stats.facesDetected === 1 ? '#00ff00' : '#ff4444';
+  ctx.fillStyle = faceColor;
+  ctx.fillText(`Faces: ${stats.facesDetected}`, 20, 80);
+
+  // Draw risk indicator
+  const riskColor = stats.riskScore < 25 ? '#00ff00' : stats.riskScore < 50 ? '#ffaa00' : '#ff4444';
+  ctx.fillStyle = riskColor;
+  ctx.fillText(`Risk: ${stats.riskScore}`, 20, 120);
+
+  // Draw corner indicators
+  ctx.strokeStyle = '#00ffff';
+  ctx.lineWidth = 3;
+  const cornerSize = 30;
+  
+  // Top-left
+  ctx.beginPath();
+  ctx.moveTo(20, 20 + cornerSize);
+  ctx.lineTo(20, 20);
+  ctx.lineTo(20 + cornerSize, 20);
+  ctx.stroke();
+
+  // Top-right
+  ctx.beginPath();
+  ctx.moveTo(outputCanvas.width - 20 - cornerSize, 20);
+  ctx.lineTo(outputCanvas.width - 20, 20);
+  ctx.lineTo(outputCanvas.width - 20, 20 + cornerSize);
+  ctx.stroke();
+
+  // Bottom-left
+  ctx.beginPath();
+  ctx.moveTo(20, outputCanvas.height - 20 - cornerSize);
+  ctx.lineTo(20, outputCanvas.height - 20);
+  ctx.lineTo(20 + cornerSize, outputCanvas.height - 20);
+  ctx.stroke();
+
+  // Bottom-right
+  ctx.beginPath();
+  ctx.moveTo(outputCanvas.width - 20 - cornerSize, outputCanvas.height - 20);
+  ctx.lineTo(outputCanvas.width - 20, outputCanvas.height - 20);
+  ctx.lineTo(outputCanvas.width - 20, outputCanvas.height - 20 - cornerSize);
+  ctx.stroke();
+}
+
+// Update the start button event listener
+startBtn.addEventListener('click', initializeDetectorWithDisplay);
+
+// Add error handler for video
+document.getElementById('videoElement').addEventListener('error', function(e) {
+  console.error('Video element error:', e);
+  alert('Video display error. Please refresh and try again.');
+});
 
     stopBtn.addEventListener('click', async () => {
       if (confirm('Stop monitoring and generate report?')) {

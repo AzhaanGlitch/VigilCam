@@ -481,6 +481,52 @@ class MLDetector {
       this.video.remove();
     }
   }
+  async setupCamera() {
+  this.video = document.getElementById('videoElement');
+  if (!this.video) {
+    this.video = document.createElement('video');
+    this.video.id = 'videoElement';
+  }
+  
+  this.video.setAttribute('playsinline', '');
+  this.video.setAttribute('autoplay', '');
+  this.video.style.display = 'block'; // CRITICAL
+  
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: 'user'
+      },
+      audio: true
+    });
+    
+    this.video.srcObject = stream;
+    
+    // Wait for video to be ready
+    await new Promise((resolve) => {
+      this.video.onloadedmetadata = () => {
+        this.video.play().then(resolve);
+      };
+    });
+    
+    // Setup canvas
+    this.canvas = document.getElementById('outputCanvas') || document.createElement('canvas');
+    this.canvas.width = this.video.videoWidth;
+    this.canvas.height = this.video.videoHeight;
+    this.ctx = this.canvas.getContext('2d');
+    
+    console.log('Camera setup complete:', {
+      videoWidth: this.video.videoWidth,
+      videoHeight: this.video.videoHeight
+    });
+    
+    return stream;
+  } catch (error) {
+    throw new Error(`Camera access denied: ${error.message}`);
+  }
+}
 }
 
 // Export for use in monitoring page

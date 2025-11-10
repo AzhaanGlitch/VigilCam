@@ -1106,3 +1106,524 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================
+   Mobile Responsive Navigation
+   ========================================== */
+
+/* Hamburger Menu Button */
+.nav-toggle {
+  display: none;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+
+.nav-toggle:hover {
+  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 24px;
+  height: 20px;
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: var(--primary-color);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* Hamburger Animation */
+.nav-toggle.active .hamburger span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.nav-toggle.active .hamburger span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.active .hamburger span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Mobile Menu Styles */
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: block;
+  }
+
+  .nav-container {
+    position: relative;
+  }
+
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 5rem 2rem 2rem;
+    gap: 1.5rem;
+    align-items: flex-start;
+    transition: right 0.3s ease;
+    z-index: 1000;
+    overflow-y: auto;
+    border-left: 1px solid var(--border-color);
+  }
+
+  .nav-menu.active {
+    right: 0;
+  }
+
+  .nav-menu li {
+    width: 100%;
+  }
+
+  .nav-link,
+  .nav-register,
+  .nav-signin {
+    display: block;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    text-align: left;
+    border-radius: 8px;
+  }
+
+  .nav-user {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Overlay */
+  .nav-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+  }
+
+  .nav-overlay.active {
+    display: block;
+  }
+}
+
+/* Tablet Adjustments */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .nav-menu {
+    gap: 1.5rem;
+  }
+
+  .nav-link {
+    font-size: 0.9rem;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2rem !important;
+  }
+
+  .hero-description {
+    font-size: 1rem !important;
+  }
+
+  .monitoring-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .camera-feed {
+    min-height: 200px;
+  }
+
+  .stats-panel {
+    grid-template-columns: 1fr !important;
+  }
+
+  .report-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ==========================================
+   Additional Mobile Responsive Fixes
+   ========================================== */
+
+/* Base adjustments for smaller screens */
+@media (max-width: 768px) {
+  :root {
+    font-size: 14px;
+  }
+
+  /* Navigation */
+  .nav-container {
+    padding: 0 1.5rem;
+  }
+
+  /* Main Content */
+  .main-content {
+    padding: 0 1rem;
+  }
+
+  /* Background Image */
+  .background-image {
+    width: 100%;
+    opacity: 0.2;
+  }
+
+  /* Hero Section */
+  .hero {
+    min-height: auto;
+    padding: 3rem 0;
+  }
+
+  .hero-content {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .hero-badge {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+    line-height: 1.2;
+  }
+
+  .hero-description {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    width: 100%;
+    gap: 1rem;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    justify-content: center;
+    padding: 1rem 1.5rem;
+  }
+
+  /* Auth Pages */
+  .auth-container {
+    padding: 2rem 1rem;
+  }
+
+  .auth-box {
+    padding: 2rem 1.5rem;
+  }
+
+  .auth-title {
+    font-size: 1.75rem;
+  }
+
+  /* Monitoring Page */
+  .monitoring-section {
+    padding: 1rem 0;
+  }
+
+  .monitoring-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .monitoring-title {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .monitoring-user {
+    font-size: 0.9rem;
+  }
+
+  .monitoring-controls {
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .monitoring-controls button {
+    width: 100%;
+  }
+
+  /* Camera Layout */
+  .monitoring-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .camera-section {
+    gap: 1rem;
+  }
+
+  .camera-feed {
+    border-radius: 8px;
+    border-width: 1px;
+  }
+
+  /* Stats Section */
+  .stats-section {
+    position: relative;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .stats-panel {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-icon {
+    font-size: 1.8rem;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  /* Violations Panel */
+  .violations-panel {
+    padding: 1.2rem;
+    max-height: 350px;
+  }
+
+  .violations-title {
+    font-size: 1rem;
+  }
+
+  .violation-item {
+    padding: 0.7rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Risk Panel */
+  .camera-risk-panel {
+    padding: 1.2rem;
+  }
+
+  .risk-title {
+    font-size: 1rem;
+  }
+
+  .risk-value {
+    font-size: 1.5rem;
+  }
+
+  /* Report Panel */
+  .report-panel-inline {
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .report-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .report-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .report-stat {
+    padding: 1rem;
+  }
+
+  .report-stat-label {
+    font-size: 0.8rem;
+  }
+
+  .report-stat-value {
+    font-size: 1.5rem;
+  }
+
+  .report-actions {
+    gap: 0.8rem;
+  }
+
+  .report-actions button,
+  .report-actions a {
+    width: 100%;
+  }
+
+  /* About Page */
+  .about-section {
+    padding: 2rem 0;
+  }
+
+  .about-title {
+    font-size: 2rem;
+  }
+
+  .about-subtitle {
+    font-size: 1rem;
+  }
+
+  .features-grid,
+  .social-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .feature-card {
+    padding: 1.5rem;
+  }
+
+  .feature-title {
+    font-size: 1.2rem;
+  }
+
+  /* History Page */
+  .history-container {
+    padding: 1rem;
+  }
+
+  .history-title {
+    font-size: 2rem;
+  }
+
+  .reports-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  /* Modal */
+  .modal-content {
+    width: 95%;
+    margin: 5% auto;
+  }
+
+  .modal-header {
+    padding: 1.5rem;
+  }
+
+  .modal-title {
+    font-size: 1.3rem;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  /* Footer */
+  .footer-content {
+    padding: 0 1.5rem;
+  }
+
+  .footer-content p {
+    font-size: 0.85rem;
+  }
+
+  /* Alerts */
+  .floating-alert {
+    right: 10px;
+    top: 80px;
+    min-width: auto;
+    width: calc(100% - 20px);
+    max-width: 350px;
+  }
+
+  /* Buttons */
+  .btn-large {
+    padding: 0.9rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .btn-small {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Very Small Mobile (iPhone SE, etc.) */
+@media (max-width: 375px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-description {
+    font-size: 0.95rem;
+  }
+
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .violation-item {
+    font-size: 0.9rem;
+  }
+}
+
+/* Landscape Mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero {
+    min-height: auto;
+    padding: 2rem 0;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .auth-container {
+    min-height: auto;
+    padding: 2rem 1rem;
+  }
+}
+
+/* iPad and Tablet Portrait */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .monitoring-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .reports-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Ensure inputs are readable on mobile */
+@media (max-width: 768px) {
+  .form-input,
+  select,
+  textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
