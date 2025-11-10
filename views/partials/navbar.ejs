@@ -45,67 +45,43 @@
 </nav>
 
 <script>
-  // Hamburger Menu Toggle
-  (function() {
-    const navToggle = document.getElementById('navToggle');
-    const navMenu = document.getElementById('navMenu');
-    const navOverlay = document.getElementById('navOverlay');
-    const navLinks = document.querySelectorAll('.nav-link, .nav-signin, .nav-register, .nav-logout');
-
-    function toggleMenu() {
-      navToggle.classList.toggle('active');
-      navMenu.classList.toggle('active');
-      navOverlay.classList.toggle('active');
-      document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
-    }
-
-    function closeMenu() {
-      navToggle.classList.remove('active');
-      navMenu.classList.remove('active');
-      navOverlay.classList.remove('active');
-      document.body.style.overflow = '';
-    }
-
-    if (navToggle) {
-      navToggle.addEventListener('click', toggleMenu);
-    }
-
-    if (navOverlay) {
-      navOverlay.addEventListener('click', closeMenu);
-    }
-
-    navLinks.forEach(link => {
-      link.addEventListener('click', closeMenu);
-    });
-
-    // Close menu on window resize if opened
-    window.addEventListener('resize', function() {
-      if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
-        closeMenu();
-      }
-    });
-  })();
-  
-  // Fixed Hamburger Menu Toggle - Add to navbar.ejs
+ // Fixed Hamburger Menu Toggle - Complete Solution
 (function() {
+  console.log('Navbar script loaded');
+  
   const navToggle = document.getElementById('navToggle');
   const navMenu = document.getElementById('navMenu');
   const navOverlay = document.getElementById('navOverlay');
   const navLinks = document.querySelectorAll('.nav-link, .nav-signin, .nav-register, .nav-logout');
 
-  function toggleMenu() {
-    navToggle.classList.toggle('active');
-    navMenu.classList.toggle('active');
-    navOverlay.classList.toggle('active');
+  console.log('Nav elements:', {
+    toggle: !!navToggle,
+    menu: !!navMenu,
+    overlay: !!navOverlay,
+    links: navLinks.length
+  });
+
+  function toggleMenu(e) {
+    if (e) e.preventDefault();
     
-    // Prevent body scroll when menu is open
-    if (navMenu.classList.contains('active')) {
-      document.body.classList.add('menu-open');
-      document.body.style.overflow = 'hidden';
+    const isActive = navMenu.classList.contains('active');
+    
+    if (isActive) {
+      closeMenu();
     } else {
-      document.body.classList.remove('menu-open');
-      document.body.style.overflow = '';
+      openMenu();
     }
+    
+    console.log('Menu toggled:', !isActive);
+  }
+
+  function openMenu() {
+    navToggle.classList.add('active');
+    navMenu.classList.add('active');
+    navOverlay.classList.add('active');
+    document.body.classList.add('menu-open');
+    document.body.style.overflow = 'hidden';
+    console.log('Menu opened');
   }
 
   function closeMenu() {
@@ -114,24 +90,51 @@
     navOverlay.classList.remove('active');
     document.body.classList.remove('menu-open');
     document.body.style.overflow = '';
+    console.log('Menu closed');
   }
 
-  // Toggle menu on hamburger click
+  // Toggle menu on hamburger click/touch
   if (navToggle) {
+    // Remove any existing listeners
+    navToggle.onclick = null;
+    
+    // Add both click and touchstart for better mobile support
     navToggle.addEventListener('click', function(e) {
-      e.stopPropagation(); // Prevent event bubbling
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Toggle clicked');
       toggleMenu();
-    });
+    }, { passive: false });
+
+    navToggle.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Toggle touched');
+      toggleMenu();
+    }, { passive: false });
   }
 
   // Close menu when clicking overlay
   if (navOverlay) {
-    navOverlay.addEventListener('click', closeMenu);
+    navOverlay.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('Overlay clicked');
+      closeMenu();
+    });
+
+    navOverlay.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      console.log('Overlay touched');
+      closeMenu();
+    }, { passive: false });
   }
 
   // Close menu when clicking nav links
   navLinks.forEach(link => {
-    link.addEventListener('click', closeMenu);
+    link.addEventListener('click', function() {
+      console.log('Link clicked');
+      closeMenu();
+    });
   });
 
   // Close menu on window resize if opened
@@ -140,6 +143,7 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function() {
       if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
+        console.log('Window resized, closing menu');
         closeMenu();
       }
     }, 250);
@@ -148,8 +152,18 @@
   // Close menu on ESC key
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+      console.log('ESC pressed');
       closeMenu();
     }
   });
+
+  // Prevent scroll on touch devices when menu is open
+  if (navMenu) {
+    navMenu.addEventListener('touchmove', function(e) {
+      e.stopPropagation();
+    }, { passive: true });
+  }
+
+  console.log('Navbar script initialization complete');
 })();
 </script>
